@@ -1,4 +1,3 @@
-insert into SalesMan (eID) values ('eID');
 insert into SalesMan (eID) values ('3');
 insert into SalesMan (eID) values ('4');
 insert into SalesMan (eID) values ('6');
@@ -20,3 +19,4 @@ insert into SalesMan (eID) values ('39');
 insert into SalesMan (eID) values ('40');
 insert into SalesMan (eID) values ('43');
 insert into SalesMan (eID) values ('45');
+insert into SalesMan (eID) values ('47');
