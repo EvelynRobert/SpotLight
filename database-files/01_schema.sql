@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS Employee (
   fNAME VARCHAR(50),
   position VARCHAR(50),
   email VARCHAR(50),
-  avatarURL VARCHAR(100)
+  Avatar_URL VARCHAR(100)
 );
 
 CREATE TABLE IF NOT EXISTS SalesMan (
