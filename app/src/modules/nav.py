@@ -4,7 +4,6 @@
 
 import streamlit as st
 
-
 #### ------------------------ General ------------------------
 def HomeNav():
     st.sidebar.page_link("Home.py", label="Home", icon="🏠")
@@ -58,17 +57,11 @@ def AddNgoNav():
 
 #### ------------------------ System Admin Role ------------------------
 def AdminPageNav():
-    st.sidebar.page_link("pages/20_Admin_Home.py", label="System Admin", icon="🖥️")
-    st.sidebar.page_link(
-        "pages/21_ML_Model_Mgmt.py", label="ML Model Management", icon="🏢"
-    )
+    st.sidebar.page_link("pages/o_and_m_dashboard.py", label="O&M Dashboard", icon="🖥️")
 
 
 # --------------------------------Links Function -----------------------------------------------
 def SideBarLinks(show_home=False):
-    """
-    This function handles adding links to the sidebar of the app based upon the logged-in user's role, which was put in the streamlit session_state object when logging in.
-    """
 
     # add a logo to the sidebar always
     st.sidebar.image("assets/logo.png", width=150)
