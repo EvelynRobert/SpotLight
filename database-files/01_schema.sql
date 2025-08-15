@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS Spot (
 CREATE TABLE IF NOT EXISTS Reviews (
   rID INT AUTO_INCREMENT PRIMARY KEY,
   spotID INT
-  text TEXT,
+  'text' TEXT,
   rating INT,
   cID INT,
   lastUpdate TIMESTAMP,
