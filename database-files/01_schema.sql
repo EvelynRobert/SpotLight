@@ -18,13 +18,30 @@ CREATE TABLE IF NOT EXISTS Customers (
   TEL VARCHAR(20)
 );
 
+CREATE TABLE IF NOT EXISTS Spot (
+  spotID INT AUTO_INCREMENT PRIMARY KEY,
+  price INT,
+  contactTel VARCHAR(20),
+  imageURL VARCHAR(100),
+  estViewPerMonth INT,
+  monthlyRentCost INT,
+  endTimeOfCurrentOrder DATE,
+  status ENUM('free', 'inuse', 'w.issue', 'planned'),
+  address VARCHAR(100),
+  latitude DOUBLE,
+  longitude DOUBLE,
+  FULLTEXT KEY ft_address (address)
+);
+
 CREATE TABLE IF NOT EXISTS Reviews (
   rID INT AUTO_INCREMENT PRIMARY KEY,
+  spotID INT
   lastUpdate TIMESTAMP,
   text TEXT,
   rating INT,
   cID INT,
   CONSTRAINT chk_ratingrange CHECK (rating >= 0 AND rating <= 5),
+  FOREIGN KEY (spotID) REFERENCES Spot(spotID) ON DELETE CASCADE ON DELETE RESTRICT,
   FOREIGN KEY (cID) REFERENCES Customers(cID) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
@@ -71,20 +88,6 @@ CREATE TABLE IF NOT EXISTS ProcessedOrder (
   FOREIGN KEY (processorID) REFERENCES SalesMan(eID) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
-CREATE TABLE IF NOT EXISTS Spot (
-  spotID INT AUTO_INCREMENT PRIMARY KEY,
-  price INT,
-  contactTel VARCHAR(20),
-  imageURL VARCHAR(100),
-  estViewPerMonth INT,
-  monthlyRentCost INT,
-  endTimeOfCurrentOrder DATE,
-  status ENUM('free', 'inuse', 'w.issue', 'planned'),
-  address VARCHAR(100),
-  latitude DOUBLE,
-  longitude DOUBLE,
-  FULLTEXT KEY ft_address (address)
-);
 
 CREATE TABLE IF NOT EXISTS SpotOrder (
   spotID INT,
