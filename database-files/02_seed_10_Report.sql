@@ -1,44 +1,29 @@
-insert into Report (rID, Date, Time, status, eID) values (15, '2023-06-27', '10:23:22', 'closed', 20);
-insert into Report (rID, Date, Time, status, eID) values (10, '2022-08-22', '08:46:29', 'closed', 36);
-insert into Report (rID, Date, Time, status, eID) values (41, '2023-03-21', '11:59:34', 'open', 16);
-insert into Report (rID, Date, Time, status, eID) values (24, '2022-11-02', '16:16:47', 'closed', 36);
-insert into Report (rID, Date, Time, status, eID) values (6, '2022-09-02', '11:28:37', 'closed', 1);
-insert into Report (rID, Date, Time, status, eID) values (35, '2023-02-22', '08:38:20', 'closed', 11);
-insert into Report (rID, Date, Time, status, eID) values (25, '2025-10-22', '13:14:08', 'closed', 7);
-insert into Report (rID, Date, Time, status, eID) values (17, '2020-04-15', '16:46:15', 'closed', 36);
-insert into Report (rID, Date, Time, status, eID) values (8, '2022-04-03', '11:48:21', 'closed', 36);
-insert into Report (rID, Date, Time, status, eID) values (5, '2025-09-24', '11:45:41', 'open', 41);
-insert into Report (rID, Date, Time, status, eID) values (39, '2024-03-10', '10:08:42', 'closed', 49);
-insert into Report (rID, Date, Time, status, eID) values (3, '2024-12-15', '09:37:27', 'closed', 7);
-insert into Report (rID, Date, Time, status, eID) values (8, '2022-04-03', '11:48:21', 'closed', 36);
-insert into Report (rID, Date, Time, status, eID) values (17, '2020-04-15', '16:46:15', 'closed', 36);
-insert into Report (rID, Date, Time, status, eID) values (8, '2022-04-03', '11:48:21', 'closed', 36);
-insert into Report (rID, Date, Time, status, eID) values (19, '2025-09-23', '18:20:53', 'open', 2);
-insert into Report (rID, Date, Time, status, eID) values (13, '2025-11-03', '12:05:54', 'closed', 11);
-insert into Report (rID, Date, Time, status, eID) values (11, '2024-01-25', '09:35:18', 'open', 34);
-insert into Report (rID, Date, Time, status, eID) values (2, '2024-09-21', '11:08:47', 'closed', 49);
-insert into Report (rID, Date, Time, status, eID) values (30, '2022-12-24', '12:49:41', 'closed', 28);
-insert into Report (rID, Date, Time, status, eID) values (29, '2024-07-08', '08:43:46', 'closed', 49);
-insert into Report (rID, Date, Time, status, eID) values (33, '2025-11-01', '18:19:53', 'closed', 16);
-insert into Report (rID, Date, Time, status, eID) values (11, '2024-01-25', '09:35:18', 'open', 34);
-insert into Report (rID, Date, Time, status, eID) values (1, '2022-07-01', '18:07:01', 'open', 18);
-insert into Report (rID, Date, Time, status, eID) values (43, '2021-07-12', '16:28:07', 'closed', 7);
-insert into Report (rID, Date, Time, status, eID) values (17, '2020-04-15', '16:46:15', 'closed', 36);
-insert into Report (rID, Date, Time, status, eID) values (38, '2025-10-23', '09:46:31', 'open', 49);
-insert into Report (rID, Date, Time, status, eID) values (6, '2022-09-02', '11:28:37', 'closed', 1);
-insert into Report (rID, Date, Time, status, eID) values (40, '2021-02-19', '10:16:33', 'open', 41);
-insert into Report (rID, Date, Time, status, eID) values (28, '2025-09-26', '17:29:33', 'closed', 49);
-insert into Report (rID, Date, Time, status, eID) values (1, '2022-07-01', '18:07:01', 'open', 18);
-insert into Report (rID, Date, Time, status, eID) values (30, '2022-12-24', '12:49:41', 'closed', 28);
-insert into Report (rID, Date, Time, status, eID) values (30, '2022-12-24', '12:49:41', 'closed', 28);
-insert into Report (rID, Date, Time, status, eID) values (14, '2020-03-04', '14:17:29', 'closed', 34);
-insert into Report (rID, Date, Time, status, eID) values (4, '2020-03-03', '11:14:32', 'closed', 49);
-insert into Report (rID, Date, Time, status, eID) values (13, '2025-11-03', '12:05:54', 'closed', 11);
-insert into Report (rID, Date, Time, status, eID) values (4, '2020-03-03', '11:14:32', 'closed', 49);
-insert into Report (rID, Date, Time, status, eID) values (11, '2024-01-25', '09:35:18', 'open', 34);
-insert into Report (rID, Date, Time, status, eID) values (21, '2025-10-24', '12:04:13', 'in_progress', 29);
-insert into Report (rID, Date, Time, status, eID) values (14, '2020-03-04', '14:17:29', 'closed', 34);
-insert into Report (rID, Date, Time, status, eID) values (13, '2025-11-03', '12:05:54', 'closed', 11);
-insert into Report (rID, Date, Time, status, eID) values (5, '2025-09-24', '11:45:41', 'open', 41);
-insert into Report (rID, Date, Time, status, eID) values (13, '2025-11-03', '12:05:54', 'closed', 11);
-insert into Report (rID, Date, Time, status, eID) values (26, '2022-10-28', '08:55:07', 'closed', 14);
+INSERT INTO Report (rID, time, date, status, generatorID, examinerID) VALUES
+(15, '2023-06-27 10:23:22', '2023-06-27', 'examined',   20,  1),
+(10, '2022-08-22 08:46:29', '2022-08-22', 'examined',   36,  2),
+(41, '2023-03-21 11:59:34', '2023-03-21', 'unexamined', 16,  7),
+(24, '2022-11-02 16:16:47', '2022-11-02', 'examined',   36, 11),
+( 6, '2022-09-02 11:28:37', '2022-09-02', 'examined',    1, 12),
+(35, '2023-02-22 08:38:20', '2023-02-22', 'examined',   11, 14),
+(25, '2025-10-22 13:14:08', '2025-10-22', 'examined',    7, 16),
+(17, '2020-04-15 16:46:15', '2020-04-15', 'examined',   36, 18),
+( 8, '2022-04-03 11:48:21', '2022-04-03', 'examined',   36, 20),
+( 5, '2025-09-24 11:45:41', '2025-09-24', 'unexamined', 41, 28),
+(39, '2024-03-10 10:08:42', '2024-03-10', 'examined',   49, 29),
+( 3, '2024-12-15 09:37:27', '2024-12-15', 'examined',    7, 34),
+(19, '2025-09-23 18:20:53', '2025-09-23', 'unexamined',  2, 36),
+(13, '2025-11-03 12:05:54', '2025-11-03', 'examined',   11, 41),
+(11, '2024-01-25 09:35:18', '2024-01-25', 'unexamined', 34, 44),
+( 2, '2024-09-21 11:08:47', '2024-09-21', 'examined',   49, 46),
+(30, '2022-12-24 12:49:41', '2022-12-24', 'examined',   28, 48),
+(29, '2024-07-08 08:43:46', '2024-07-08', 'examined',   49, 49),
+(33, '2025-11-01 18:19:53', '2025-11-01', 'examined',   16,  1),
+( 1, '2022-07-01 18:07:01', '2022-07-01', 'unexamined', 18,  2),
+(43, '2021-07-12 16:28:07', '2021-07-12', 'examined',    7,  7),
+(38, '2025-10-23 09:46:31', '2025-10-23', 'unexamined', 49, 11),
+(40, '2021-02-19 10:16:33', '2021-02-19', 'unexamined', 41, 12),
+(28, '2025-09-26 17:29:33', '2025-09-26', 'examined',   49, 14),
+(14, '2020-03-04 14:17:29', '2020-03-04', 'examined',   34, 16),
+( 4, '2020-03-03 11:14:32', '2020-03-03', 'examined',   49, 18),
+(21, '2025-10-24 12:04:13', '2025-10-24', 'unexamined', 29, 20),
+(26, '2022-10-28 08:55:07', '2022-10-28', 'examined',   14, 28);
