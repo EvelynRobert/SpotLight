@@ -57,7 +57,7 @@ def AddNgoNav():
 
 #### ------------------------ System Admin Role ------------------------
 def AdminPageNav():
-    st.sidebar.page_link("pages/o_and_m_dashboard.py", label="O&M Dashboard", icon="🖥️")
+    st.sidebar.page_link("pages/dashboard.py", label="O&M Dashboard", icon="🖥️")
 
 
 # --------------------------------Links Function -----------------------------------------------
