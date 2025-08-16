@@ -78,7 +78,7 @@ def full_db_search():
             cursor.execute(
                 (
                     "SELECT orderID, date, total, cID "
-                    "FROM Orders WHERE DATE_FORMAT(date, '%Y-%m-%d') LIKE %s LIMIT 20"
+                    "FROM Orders WHERE DATE_FORMAT(date, '%%Y-%%m-%%d') LIKE %s LIMIT 20"
                 ),
                 (f"%{q}%",),
             )
