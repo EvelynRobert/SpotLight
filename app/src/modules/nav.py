@@ -26,6 +26,13 @@ def AdminPageNav():
     st.sidebar.page_link("pages/23_OM_Admin_and_Imports.py", label="Admin & Imports", icon="🛠️")  
 
 
+def OwnerPageNav():
+    st.sidebar.subheader("Owner")
+    st.sidebar.page_link("pages/30_Owner_Home.py", label="📊 Owner Dashboard")
+    st.sidebar.page_link("pages/31_Owner_Deals_and_Knowledge.py", label="📚 Deals & Knowledge")
+    st.sidebar.page_link("pages/32_Owner_Pricing_and_Discounts.py", label="💸 Pricing & Discounts")
+    st.sidebar.page_link("pages/33_Owner_Reviews_VIP_and_Hygiene.py", label="⭐ Reviews, VIP & Hygiene")
+
 
 # --------------------------------Links Function -----------------------------------------------
 def SideBarLinks(show_home=False):
@@ -56,6 +63,10 @@ def SideBarLinks(show_home=False):
         # If the user is an administrator, give them access to the administrator pages
         if st.session_state["role"] == "o&m":
             AdminPageNav()
+            
+        if st.session_state["role"] == "owner":
+            OwnerPageNav()
+        
 
     if st.session_state["authenticated"]:
         # Always show a logout button if there is a logged in user
