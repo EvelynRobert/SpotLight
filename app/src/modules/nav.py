@@ -9,7 +9,9 @@ def HomeNav():
     st.sidebar.page_link("Home.py", label="Home", icon="🏠")
 
 def CustomerPageNav():
-    st.sidebar.page_link("pages/01_profile.py", label="Profile", icon="👤")
+    st.sidebar.page_link("pages/00_profile.py", label="Profile", icon="👤")
+    st.sidebar.page_link("pages/01_customer_map.py", label="Customer Map", icon="🗺️")
+    st.sidebar.page_link("pages/02_search.py", label="Search", icon="🔍")
 
 def SalesmanPageNav():
     st.sidebar.page_link("pages/10_workbench.py", label="Workbench", icon="🔧")
