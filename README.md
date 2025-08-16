@@ -1,16 +1,17 @@
 # 🗺️ SpotLight Project
 
-SpotLight is a web application for managing and visualizing advertising spots on a map.  
+SpotLight is a web application for managing and visualizing advertising spots on a map. 
 
 1. Clone this repository
 2. Create a valid .env file in the following format:
 ```bash
-SECRET_KEY=someCrazyS3cR3T!Key.!
-DB_USER=root
-DB_HOST=db
-DB_PORT=3306
-DB_NAME=SpotLight
-MYSQL_ROOT_PASSWORD=password
+SECRET_KEY=dev
+FLASK_ENV=development
+MYSQL_DATABASE_HOST=127.0.0.1
+MYSQL_DATABASE_PORT=3306
+MYSQL_DATABASE_USER=root
+MYSQL_DATABASE_PASSWORD=changeme
+MYSQL_DATABASE_DB=SpotLight
 ```
 3. Build and start up the service using Docker Compose:
 ```docker compose up -d```
