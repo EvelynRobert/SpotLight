@@ -50,13 +50,26 @@ with m2:
         st.error(f"Customers metrics error: {code} {data}")
 
 with m3:
-    st.subheader("Orders (90d)")
-    code, data = api("GET", "/o_and_m/orders/metrics?period=90d")
+    st.subheader("Orders (365d)")
+    code, data = api("GET", "/o_and_m/orders/metrics?period=365d")
     if code == 200 and isinstance(data, dict):
-        a,b = st.columns(2)
-        a.metric("All time total", data.get("total",0))
-        b.metric("Avg order $", round(data.get("avg_price",0),2) if data.get("avg_price") is not None else 0)
-        st.caption(f"Orders in last 90 days: {data.get('last_period',0)}")
+        def f(x, default=0.0):
+            try:
+                return float(x)
+            except (TypeError, ValueError):
+                return default
+
+        a, b = st.columns(2)
+        a.metric("All time total", int(f(data.get("total", 0))))
+        b.metric("Avg order $", f"${f(data.get('avg_price', 0)):,.2f}")
+
+        # show orders in the selected window if the backend gives it
+        period_count = data.get("last_period") or data.get("orders_365d") or 0
+        try:
+            period_count = int(float(period_count))
+        except Exception:
+            period_count = 0
+        st.caption(f"Orders in last 365 days: {period_count}")
     else:
         st.error(f"Orders metrics error: {code} {data}")
 

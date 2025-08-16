@@ -1,6 +1,8 @@
 import os, requests, pandas as pd, streamlit as st
 from modules.nav import SideBarLinks
 
+
+
 st.set_page_config(page_title="O&M Statistics", layout="wide")
 SideBarLinks()
 st.title("Statistics")
@@ -16,7 +18,7 @@ def api(method: str, path: str, **kw):
     except Exception as e:
         return 0, {"error": str(e)}
 
-period = st.segmented_control("Period", ["7d","30d","90d","180d"], default="90d")
+period = st.segmented_control("Period", ["90d", "180d", "365d", "730d"], default="365d")
 st.caption("Metrics use the selected period where applicable (orders).")
 
 c1, c2, c3 = st.columns(3)
@@ -48,12 +50,26 @@ with c3:
     st.subheader("Orders")
     code, data = api("GET", f"/o_and_m/orders/metrics?period={period}")
     if code == 200 and isinstance(data, dict):
-        a,b = st.columns(2)
-        a.metric("All time total", data.get("total",0))
-        b.metric("Avg order $", round(data.get("avg_price",0),2) if data.get("avg_price") is not None else 0)
-        st.caption(f"Orders in {period}: {data.get('last_period',0)}")
+        def f(x, default=0.0):
+            try:
+                return float(x)
+            except (TypeError, ValueError):
+                return default
+
+        a, b = st.columns(2)
+        a.metric("All time total", int(f(data.get("total", 0))))
+        b.metric("Avg order $", f"${f(data.get('avg_price', 0)):,.2f}")
+
+        # optional caption: how many orders in the chosen window
+        period_count = data.get("last_period") or data.get(f"orders_{period}") or 0
+        try:
+            period_count = int(float(period_count))
+        except Exception:
+            period_count = 0
+        st.caption(f"Orders in {period}: {period_count}")
     else:
         st.error(f"{code} {data}")
+
 
 st.divider()
 t1, t2, t3 = st.tabs(["Recent spots", "Recent customers", "Recent orders"])
