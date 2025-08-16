@@ -1,7 +1,7 @@
-SPOTLIGHT
+# SPOTLIGHT
 
 
-# Environment Creation, these are variables needed to run the project. 
+#Environment Creation, these are variables needed to run the project. 
 SECRET_KEY=dev
 FLASK_ENV=development
 MYSQL_DATABASE_HOST=127.0.0.1
@@ -10,4 +10,4 @@ MYSQL_DATABASE_USER=root
 MYSQL_DATABASE_PASSWORD=changeme
 MYSQL_DATABASE_DB=SpotLight
 
-# Then, create a venv and install requirements, and run the API. 
+#Then, create a venv and install requirements, and run the API. 
