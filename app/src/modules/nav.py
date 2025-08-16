@@ -55,7 +55,9 @@ def AddNgoNav():
     st.sidebar.page_link("pages/15_Add_NGO.py", label="Add New NGO", icon="➕")
 
 
-#### ------------------------ System Admin Role ------------------------
+def CustomerPageNav():
+    st.sidebar.page_link("pages/01_profile.py", label="Profile", icon="👤")
+
 def AdminPageNav():
     st.sidebar.page_link("pages/20_dashboard.py", label="O&M Dashboard", icon="🖥️")
     st.sidebar.page_link("pages/21_statistics.py", label="Statistics", icon="📊")
@@ -80,10 +82,8 @@ def SideBarLinks(show_home=False):
     if st.session_state["authenticated"]:
 
         # Show World Bank Link and Map Demo Link if the user is a political strategy advisor role.
-        if st.session_state["role"] == "pol_strat_advisor":
-            PolStratAdvHomeNav()
-            WorldBankVizNav()
-            MapDemoNav()
+        if st.session_state["role"] == "customer":
+            CustomerPageNav()
 
         # If the user role is usaid worker, show the Api Testing page
         if st.session_state["role"] == "usaid_worker":
@@ -94,7 +94,7 @@ def SideBarLinks(show_home=False):
             AddNgoNav()
 
         # If the user is an administrator, give them access to the administrator pages
-        if st.session_state["role"] == "administrator":
+        if st.session_state["role"] == "o&m":
             AdminPageNav()
 
     # Always show the About page at the bottom of the list of links
