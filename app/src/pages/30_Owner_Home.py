@@ -2,12 +2,7 @@
 import os, sys, requests, pandas as pd, streamlit as st
 
 # --- Sidebar helper (import from modules/nav.py) ---
-try:
-    from modules.nav import SideBarLinks
-except ModuleNotFoundError:
-    # fallback: allow import when running this file directly
-    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-    from modules.nav import SideBarLinks  # type: ignore
+from modules.nav import SideBarLinks
 
 st.set_page_config(page_title="Owner • Dashboard", page_icon="📊", layout="wide")
 SideBarLinks()

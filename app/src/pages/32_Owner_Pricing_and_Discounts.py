@@ -3,12 +3,7 @@ import os, sys, requests, json, pandas as pd, streamlit as st
 
 # --- nav import like Customer ---
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-try:
-    from nav import SideBarLinks
-except Exception:
-    def SideBarLinks():
-        with st.sidebar:
-            st.page_link("Home.py", label="🏠 Home")
+from modules.nav import SideBarLinks
 
 st.set_page_config(page_title="Owner • Pricing & Discounts", page_icon="💸", layout="wide")
 SideBarLinks()

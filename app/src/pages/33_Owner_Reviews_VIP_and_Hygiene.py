@@ -4,12 +4,7 @@ from datetime import date
 
 # --- nav import like Customer ---
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-try:
-    from nav import SideBarLinks
-except Exception:
-    def SideBarLinks():
-        with st.sidebar:
-            st.page_link("Home.py", label="🏠 Home")
+from modules.nav import SideBarLinks
 
 st.set_page_config(page_title="Owner • Reviews, VIP & Hygiene", page_icon="⭐", layout="wide")
 SideBarLinks()
