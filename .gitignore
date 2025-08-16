@@ -7,3 +7,6 @@ secrets/
 */logs/*
 .vscode/
 .idea/
+# env + venv
+*.env
+.venv/
