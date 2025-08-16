@@ -10,3 +10,7 @@ secrets/
 # env + venv
 *.env
 .venv/
+
+# env + venv
+*.env
+.venv/
