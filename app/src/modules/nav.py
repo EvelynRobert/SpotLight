@@ -10,9 +10,9 @@ def HomeNav():
 
 def CustomerPageNav():
     st.sidebar.page_link("pages/01_Customer_Profile.py", label="Profile", icon="👤")
-    st.sidebar.page_link("pages/03_Customer_Map.py",                 label="🗺️ Map")
-    st.sidebar.page_link("pages/10_Customer_Browse_and_Cart.py",     label="🛒 Browse & Cart")
-    st.sidebar.page_link("pages/11_Customer_Orders_and_Cancel.py",   label="🧾 Orders & Cancel")
+    st.sidebar.page_link("pages/03_Customer_Map.py",                 label="Map", icon="🗺️")
+    st.sidebar.page_link("pages/10_Customer_Browse_and_Cart.py",     label="Browse & Cart", icon="🛒")
+    st.sidebar.page_link("pages/11_Customer_Orders_and_Cancel.py",   label="Orders & Cancel", icon="🧾")
 
 def SalesmanPageNav():
     st.sidebar.page_link("pages/40_Sales_Leads.py", label="Leads", icon="📇")
@@ -28,10 +28,10 @@ def AdminPageNav():
 
 def OwnerPageNav():
     st.sidebar.subheader("Owner")
-    st.sidebar.page_link("pages/30_Owner_Home.py", label="📊 Owner Dashboard")
-    st.sidebar.page_link("pages/31_Owner_Deals_and_Knowledge.py", label="📚 Deals & Knowledge")
-    st.sidebar.page_link("pages/32_Owner_Pricing_and_Discounts.py", label="💸 Pricing & Discounts")
-    st.sidebar.page_link("pages/33_Owner_Reviews_VIP_and_Hygiene.py", label="⭐ Reviews, VIP & Hygiene")
+    st.sidebar.page_link("pages/30_Owner_Home.py", label="Owner Dashboard", icon="📈")
+    st.sidebar.page_link("pages/31_Owner_Deals_and_Knowledge.py", label="Deals & Knowledge", icon="📚")
+    st.sidebar.page_link("pages/32_Owner_Pricing_and_Discounts.py", label="Pricing & Discounts", icon="💸")
+    st.sidebar.page_link("pages/33_Owner_Reviews_VIP_and_Hygiene.py", label="Reviews, VIP & Hygiene", icon="⭐")
 
 
 # --------------------------------Links Function -----------------------------------------------
