@@ -7,6 +7,8 @@ from logging.handlers import RotatingFileHandler
 from backend.db_connection import db
 from backend.simple.simple_routes import simple_routes
 from backend.ngos.ngo_routes import ngos
+from backend.o_and_m.o_and_m_routes import o_and_m
+from backend.customers.customer_routes import customer
 
 def create_app():
     app = Flask(__name__)
@@ -47,6 +49,8 @@ def create_app():
     app.logger.info("create_app(): registering blueprints with Flask app object.")
     app.register_blueprint(simple_routes)
     app.register_blueprint(ngos, url_prefix="/ngo")
+    app.register_blueprint(o_and_m, url_prefix="/o_and_m")
+    app.register_blueprint(customer, url_prefix="/customer")
 
     # Don't forget to return the app object
     return app
