@@ -1,106 +1,110 @@
 # pages/Statistics.py
 import streamlit as st
-import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from datetime import date
-from modules.nav import SideBarLinks
 
-API_URL = "http://web-api:4000/o_and_m"
+# --- import sidebar helper no matter where nav.py lives ---
+try:
+    from modules.nav import SideBarLinks  # your repo variant
+except ModuleNotFoundError:
+    try:
+        from nav import SideBarLinks  # alt location
+    except ModuleNotFoundError:
+        # tiny fallback so page still works
+        def SideBarLinks():
+            with st.sidebar:
+                st.page_link("Home.py", label="🏠 Home")
+                st.subheader("O&M")
+                st.page_link("pages/20_dashboard.py", label="O&M Dashboard")
+                st.page_link("pages/21_statistics.py", label="Statistics")
+                st.page_link("pages/22_management_map.py", label="Management Map")
+                st.page_link("pages/23_O&M_Admin_and_Imports.py", label="Admin & Imports")
+                st.divider()
+                if st.button("🚪 Log out", use_container_width=True):
+                    for k in ("persona","cID","active_order_id","map_lat","map_lng","role","authenticated"):
+                        st.session_state.pop(k, None)
+                    st.switch_page("Home.py")
 
-SideBarLinks()
-st.title('Statistics')
 
-def donut_chart(pct: float, center_text: str = ""):
-    pct = max(0.0, min(1.0, float(pct)))
-    fig, ax = plt.subplots(figsize=(3.5, 3.5))
-    ax.pie([pct, 1 - pct], startangle=90, wedgeprops=dict(width=0.35))
-    ax.text(0, 0, center_text, ha="center", va="center", fontsize=18, fontweight="bold")
-    ax.set(aspect="equal")
-    ax.axis("off")
-    st.pyplot(fig, use_container_width=False)
+st.set_page_config(page_title="O&M Statistics", layout="wide")
+st.title("Statistics")
 
-with st.container(border=True):
-    c1, c2, c3 = st.columns([2, 2, 1])
-    with c1:
-        st.caption("Time window")
-        window = st.selectbox(" ", ["Last 90 days", "Last 30 days", "Year to date"], label_visibility="collapsed", index=0)
-    with c2:
-        st.caption("Region")
-        st.multiselect(" ", ["West town", "East town", "South"], default=["West town", "East town", "South"], label_visibility="collapsed")
-    with c3:
-        st.caption(" ")
-        st.button("Refresh", type="primary", use_container_width=True)
+API_OAM = "http://web-api:4000/o_and_m"
+
+def get_json(url):
+    try:
+        r = requests.get(url, timeout=20)
+        if r.headers.get("content-type","").startswith("application/json"):
+            return r.status_code, r.json()
+        return r.status_code, r.text
+    except Exception as e:
+        return 0, {"error": str(e)}
+
+period = st.segmented_control("Period", ["7d","30d","90d","180d"], default="90d")
+st.caption("Metrics use the selected period where applicable (orders).")
+
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    st.subheader("Spots")
+    code, data = get_json(f"{API_OAM}/spots/metrics")
+    if code == 200 and isinstance(data, dict):
+        a,b,c = st.columns(3)
+        a.metric("Total", data.get("total",0))
+        b.metric("In use", data.get("in_use",0))
+        c.metric("With issue", data.get("with_issue",0))
+    else:
+        st.error(f"{code} {data}")
+
+with c2:
+    st.subheader("Customers")
+    code, data = get_json(f"{API_OAM}/customers/metrics")
+    if code == 200 and isinstance(data, dict):
+        a,b,c = st.columns(3)
+        a.metric("Total", data.get("total",0))
+        b.metric("VIP", data.get("vip",0))
+        c.metric("Never ordered", data.get("never_ordered",0))
+        st.caption(f"Avg days since last order: {round(data.get('avg_days',0),2)}")
+    else:
+        st.error(f"{code} {data}")
+
+with c3:
+    st.subheader("Orders")
+    code, data = get_json(f"{API_OAM}/orders/metrics?period={period}")
+    if code == 200 and isinstance(data, dict):
+        a,b = st.columns(2)
+        a.metric("All time total", data.get("total",0))
+        b.metric("Avg order $", round(data.get("avg_price",0),2) if data.get("avg_price") is not None else 0)
+        st.caption(f"Orders in {period}: {data.get('last_period',0)}")
+    else:
+        st.error(f"{code} {data}")
 
 st.divider()
+t1, t2, t3 = st.tabs(["Recent spots", "Recent customers", "Recent orders"])
 
-top_l, top_r = st.columns([3, 1])
-with top_l:
-    st.subheader("Overview")
+with t1:
+    code, data = get_json(f"{API_OAM}/spots/summary?limit=25")
+    if code == 200 and isinstance(data, list) and data:
+        df = pd.DataFrame(data)
+        show = [c for c in ["spotID","address","status","price","estViewPerMonth","monthlyRentCost"] if c in df.columns]
+        st.dataframe(df[show], use_container_width=True, hide_index=True)
+    else:
+        st.info("No data.")
 
-left, right = st.columns(2)
+with t2:
+    code, data = get_json(f"{API_OAM}/customers/summary?limit=25")
+    if code == 200 and isinstance(data, list) and data:
+        df = pd.DataFrame(data)
+        show = [c for c in ["cID","fName","lName","email","companyName","VIP","last_order_date","days_since_last_order"] if c in df.columns]
+        st.dataframe(df[show], use_container_width=True, hide_index=True)
+    else:
+        st.info("No data.")
 
-# period mapping
-if window == "Last 30 days":
-    period = "30d"
-elif window == "Last 90 days":
-    period = "90d"
-else:
-    start = date(date.today().year, 1, 1)
-    days = (date.today() - start).days + 1
-    period = f"{days}d"
-
-# fetch metrics
-spots = None
-orders = None
-try:
-    r = requests.get(f"{API_URL}/spots/metrics", timeout=10)
-    if r.status_code == 200:
-        spots = r.json()
-except Exception:
-    pass
-
-try:
-    r = requests.get(f"{API_URL}/orders/metrics", params={"period": period}, timeout=10)
-    if r.status_code == 200:
-        orders = r.json()
-except Exception:
-    pass
-
-with left:
-    with st.container(border=True):
-        st.caption("In-use Spot Ratio")
-        total = (spots or {}).get("total") or 0
-        in_use = (spots or {}).get("in_use") or 0
-        ratio = (in_use / total) if total else 0
-        donut_chart(ratio, f"{round(ratio*100) if total else 0}%")
-
-    with st.container(border=True):
-        st.caption(f"Order count ({window.lower()})")
-        st.metric(label="Orders", value=(orders or {}).get("last_period") or 0)
-
-with right:
-    with st.container(border=True):
-        st.caption(f"Customer Satisfaction ({window.lower()})")
-        a, b, c = st.columns(3)
-        a.metric("West town", "4.3 / 5")
-        b.metric("East town", "4.1 / 5")
-        c.metric("South", "4.5 / 5")
-
-    with st.container(border=True):
-        st.caption(f"VIP Re-order Count ({window.lower()})")
-        vip_df = pd.DataFrame(
-            [{"VIP": "Wassle K.", "Reorders": 7},
-             {"VIP": "Sun L.", "Reorders": 3}]
-        )
-        st.dataframe(vip_df, use_container_width=True, hide_index=True)
-
-st.divider()
-
-with st.container(border=True):
-    st.caption("Snapshot")
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Spots: Total", (spots or {}).get("total") or 0)
-    m2.metric("Spots: In-use", (spots or {}).get("in_use") or 0)
-    m3.metric("Spots: Free", (spots or {}).get("free") or 0)
-    m4.metric("Spots: W.Issue", (spots or {}).get("with_issue") or 0)
+with t3:
+    code, data = get_json(f"{API_OAM}/orders/summary?period={period}&limit=25")
+    if code == 200 and isinstance(data, list) and data:
+        df = pd.DataFrame(data)
+        show = [c for c in ["orderID","date","total","cID"] if c in df.columns]
+        st.dataframe(df[show], use_container_width=True, hide_index=True)
+    else:
+        st.info("No data.")
