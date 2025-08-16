@@ -1,5 +1,5 @@
 # 32_Owner_Priicing_and_Discounts.py
-import os, sys, requests, pandas as pd, streamlit as st
+import os, sys, requests, json, pandas as pd, streamlit as st
 
 # --- nav import like Customer ---
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
