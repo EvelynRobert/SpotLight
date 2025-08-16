@@ -49,7 +49,7 @@ if st.button('Act as a Customer',
             use_container_width=True):
     st.session_state['authenticated'] = True
     st.session_state['role'] = 'customer'
-    st.switch_page('pages/00_profile.py')
+    st.switch_page("pages/01_Customer_Profile.py")
 
 if st.button('Act as a Salesman',
              type = 'primary',

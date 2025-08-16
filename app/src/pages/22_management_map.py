@@ -1,148 +1,115 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import requests
 import pydeck as pdk
-from datetime import date
-from modules.nav import SideBarLinks
 
-API_URL = "http://web-api:4000/o_and_m"
 
-SideBarLinks()
-st.set_page_config(layout="wide")
+# --- import sidebar helper no matter where nav.py lives ---
+try:
+    from modules.nav import SideBarLinks  # your repo variant
+except ModuleNotFoundError:
+    try:
+        from nav import SideBarLinks  # alt location
+    except ModuleNotFoundError:
+        # tiny fallback so page still works
+        def SideBarLinks():
+            with st.sidebar:
+                st.page_link("Home.py", label="🏠 Home")
+                st.subheader("O&M")
+                st.page_link("pages/20_dashboard.py", label="O&M Dashboard")
+                st.page_link("pages/21_statistics.py", label="Statistics")
+                st.page_link("pages/22_management_map.py", label="Management Map")
+                st.page_link("pages/23_O&M_Admin_and_Imports.py", label="Admin & Imports")
+                st.divider()
+                if st.button("🚪 Log out", use_container_width=True):
+                    for k in ("persona","cID","active_order_id","map_lat","map_lng","role","authenticated"):
+                        st.session_state.pop(k, None)
+                    st.switch_page("Home.py")
+
+
+st.set_page_config(page_title="O&M Spots Manager", layout="wide")
 st.title("O&M Spots Dashboard")
 
-@st.cache_data(ttl=30)
-def load_spots():
-    df = None
+API_OAM = "http://web-api:4000/o_and_m"
+API_SALESMAN = "http://web-api:4000/salesman"
+
+# Gainesville defaults
+DEFAULT_LAT, DEFAULT_LNG, DEFAULT_ZOOM = 29.6516, -82.3248, 12
+
+def get_json(url):
     try:
-        r = requests.get(f"{API_URL}/spots/summary?limit=40", timeout=10)
-        if r.status_code == 200:
-            data = r.json()
-            df = pd.DataFrame(data)
-            if not df.empty and 0 in df.columns:
-                df.columns = ["spotID","address","status","price","estViewPerMonth","monthlyRentCost"]
-    except Exception:
-        pass
+        r = requests.get(url, timeout=20)
+        if r.headers.get("content-type","").startswith("application/json"):
+            return r.status_code, r.json()
+        return r.status_code, r.text
+    except Exception as e:
+        return 0, {"error": str(e)}
 
-    if "latitude" in df.columns and "longitude" in df.columns:
-        df = df.rename(columns={"latitude":"lat","longitude":"lon"})
-    else:
-        center_lat, center_lon = 29.6516, -82.3248
-        rng = np.random.default_rng(42)
-        df["lat"] = center_lat + rng.normal(0, 0.02, len(df))
-        df["lon"] = center_lon + rng.normal(0, 0.02, len(df))
+def put_json(url, payload):
+    try:
+        r = requests.put(url, json=payload, timeout=20)
+        if r.headers.get("content-type","").startswith("application/json"):
+            return r.status_code, r.json()
+        return r.status_code, r.text
+    except Exception as e:
+        return 0, {"error": str(e)}
 
-    df["imageURL"] = "https://images.unsplash.com/photo-1517148815978-75f6acaaf32c?q=80&w=1600&auto=format&fit=crop"  # demo
-    df["contactTel"] = "434-355-4335"
-    df["contactName"] = "David K."
-    df["untilDate"] = date.today().replace(year=date.today().year + 1)
-    return df
+# ----- filters -----
+left, right = st.columns([1,3])
+with left:
+    status = st.selectbox("Status", ["any","free","inuse","planned","w.issue"], index=0)
+    radius_km = st.slider("Radius (km)", 1, 20, 8)
+    lat0 = st.number_input("Center lat", value=DEFAULT_LAT, format="%.6f")
+    lng0 = st.number_input("Center lng", value=DEFAULT_LNG, format="%.6f")
+    if st.button("Center on Gainesville"):
+        lat0, lng0 = DEFAULT_LAT, DEFAULT_LNG
+with right:
+    st.caption("Use filters to fetch nearby spots. Click a point to see details in the table below.")
 
-spots_df = load_spots()
-spot_options = spots_df["spotID"].tolist()
-sel_id = st.selectbox("Select Spot", spots_df["spotID"].tolist())
-sel = spots_df.loc[spots_df["spotID"] == sel_id].iloc[0]
+params = f"lat={lat0}&lng={lng0}&radius_km={radius_km}"
+if status != "any":
+    params += f"&status={status}"
 
-base_df = pd.DataFrame({
-    "lon": spots_df["lon"].astype(float),
-    "lat": spots_df["lat"].astype(float),
-    "color": [[30, 30, 30, 200]] * len(spots_df),
-})
+code, data = get_json(f"{API_SALESMAN}/spots?{params}")
+if code != 200 or not isinstance(data, list):
+    st.error(f"Failed to load spots: {code} {data}")
+    st.stop()
 
-selected_df = pd.DataFrame([{
-    "lon": float(sel["lon"]),
-    "lat": float(sel["lat"]),
-    "color": [220, 20, 60, 240],
-}])
+df = pd.DataFrame(data).rename(columns={"latitude":"lat","longitude":"lng"})
+if df.empty:
+    st.info("No spots returned for those filters.")
+    st.stop()
 
-view_state = pdk.ViewState(
-    latitude=float(sel["lat"]),
-    longitude=float(sel["lon"]),
-    zoom=11,
-    pitch=0,
-)
-
-base = pdk.Layer(
+# ----- map (force light basemap) -----
+layer = pdk.Layer(
     "ScatterplotLayer",
-    data=base_df,
-    get_position=["lon", "lat"],
-    get_radius=120,
-    get_fill_color="color",
-    pickable=False,
+    df,
+    get_position="[lng, lat]",
+    get_radius=60,
+    pickable=True,
 )
-
-selected_layer = pdk.Layer(
-    "ScatterplotLayer",
-    data=selected_df,
-    get_position=["lon", "lat"],
-    get_radius=180,
-    get_fill_color="color",
-    pickable=False,
-)
-
+view_state = pdk.ViewState(latitude=float(lat0), longitude=float(lng0), zoom=DEFAULT_ZOOM)
 st.pydeck_chart(
     pdk.Deck(
-        layers=[base, selected_layer],
+        layers=[layer],
         initial_view_state=view_state,
-        map_style=None,
+        map_provider="carto",
+        map_style="light",
+        tooltip={"text": "{address}\nstatus: {status}"},
     )
 )
 
-with st.container(border=True):
-    st.image(sel["imageURL"], use_container_width=True)
+# ----- table & quick status update -----
+st.caption(f"{len(df)} spot(s) found")
+show_cols = [c for c in ["spotID","address","lat","lng","status","price","estViewPerMonth","monthlyRentCost","contactTel","distance_km"] if c in df.columns]
+st.dataframe(df[show_cols], use_container_width=True, hide_index=True)
 
-    st.write("")
-    b1, b2, b3, b4 = st.columns(4, gap="small")
-    if b1.button("In Use", type=("primary" if sel["status"] == "inuse" else "secondary"), use_container_width=True):
-        try:
-            r = requests.put(f"{API_URL}/spots/{sel_id}/status", json={"status":"inuse"}, timeout=10)
-            st.toast("Status updated" if r.status_code == 200 else f"Error {r.status_code}")
-        except Exception:
-            st.toast("Backend not reachable")
-    if b2.button("Free", type=("primary" if sel["status"] == "free" else "secondary"), use_container_width=True):
-        try:
-            r = requests.put(f"{API_URL}/spots/{sel_id}/status", json={"status":"free"}, timeout=10)
-            st.toast("Status updated" if r.status_code == 200 else f"Error {r.status_code}")
-        except Exception:
-            st.toast("Backend not reachable")
-    if b3.button("W.Issue", type=("primary" if sel["status"] == "w.issue" else "secondary"), use_container_width=True):
-        try:
-            r = requests.put(f"{API_URL}/spots/{sel_id}/status", json={"status":"w.issue"}, timeout=10)
-            st.toast("Status updated" if r.status_code == 200 else f"Error {r.status_code}")
-        except Exception:
-            st.toast("Backend not reachable")
-    if b4.button("Planned", type=("primary" if sel["status"] == "planned" else "secondary"), use_container_width=True):
-        try:
-            r = requests.put(f"{API_URL}/spots/{sel_id}/status", json={"status":"planned"}, timeout=10)
-            st.toast("Status updated" if r.status_code == 200 else f"Error {r.status_code}")
-        except Exception:
-            st.toast("Backend not reachable")
-
-    st.write("")
-    new_price = st.number_input("Edit Price", min_value=0, value=int(sel["price"]), key="price")
-    if st.button("Update", key="u_price", use_container_width=True):
-        st.toast("Price update: placeholder")
-
-    new_until = st.date_input("Edit Until", value=sel["untilDate"], key="until")
-    if st.button("Update", key="u_until", use_container_width=True):
-        st.toast("Until update: placeholder")
-
-    new_addr = st.text_input("Edit Address", value=str(sel["address"]), key="addr")
-    if st.button("Update", key="u_addr", use_container_width=True):
-        st.toast("Address update: placeholder")
-
-    st.write("")
-    displayed = st.container()
-    with displayed:
-        st.success(f"{int(sel['estViewPerMonth'])}")
-    new_evm = st.number_input("Edit Estimated Views/Month", min_value=0, value=int(sel["estViewPerMonth"]), key="evm")
-    if st.button("Update", key="u_evm", use_container_width=True):
-        st.toast("Estimated views update: placeholder")
-
-with st.container(border=True):
-    st.subheader("Fixed Info", anchor=False)
-    st.text_input("ID", f"{int(sel['spotID']):06d}", disabled=True)
-    st.text_input("Contact Tel", sel["contactTel"], disabled=True)
-    st.text_input("Monthly Rent Cost", f"${int(sel['monthlyRentCost'])}", disabled=True)
-    st.text_input("Contact Name", sel["contactName"], disabled=True)
+st.subheader("Update spot status")
+sid = st.number_input("spotID", min_value=1, step=1, value=int(df.iloc[0]["spotID"]))
+new_status = st.selectbox("New status", ["free","inuse","planned","w.issue"], index=0)
+if st.button("Update status", type="primary"):
+    code, resp = put_json(f"{API_SALESMAN}/spots/{int(sid)}/status", {"status": new_status})
+    if code in (200,204):
+        st.success(f"Updated spot {int(sid)} to {new_status}. Refresh the list above to see it.")
+    else:
+        st.error(f"Update failed: {code} {resp}")

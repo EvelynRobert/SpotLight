@@ -1,300 +1,196 @@
 import streamlit as st
-from modules.nav import SideBarLinks
+import pandas as pd
 import requests
-import json
+from datetime import date
 
-SideBarLinks()
-
-st.title('O&M Dashboard')
-
-API_URL = "http://web-api:4000/o_and_m"
-st.session_state.setdefault("search_results", None)
-st.session_state.setdefault("full_db_search", "")
-st.session_state.setdefault("enter_data_db", "")
-
-def performSearch(query):
+# --- import sidebar helper no matter where nav.py lives ---
+try:
+    from modules.nav import SideBarLinks  # your repo variant
+except ModuleNotFoundError:
     try:
-        response = requests.get(f"{API_URL}/search", params={"query": query})
-        if response.status_code == 200:
-            return response.json()
-        else:
-            st.error("Error fetching search results")
-            return []
+        from nav import SideBarLinks  # alt location
+    except ModuleNotFoundError:
+        # tiny fallback so page still works
+        def SideBarLinks():
+            with st.sidebar:
+                st.page_link("Home.py", label="🏠 Home")
+                st.subheader("O&M")
+                st.page_link("pages/20_dashboard.py", label="O&M Dashboard")
+                st.page_link("pages/21_statistics.py", label="Statistics")
+                st.page_link("pages/22_management_map.py", label="Management Map")
+                st.page_link("pages/23_O&M_Admin_and_Imports.py", label="Admin & Imports")
+                st.divider()
+                if st.button("🚪 Log out", use_container_width=True):
+                    for k in ("persona","cID","active_order_id","map_lat","map_lng","role","authenticated"):
+                        st.session_state.pop(k, None)
+                    st.switch_page("Home.py")
+
+
+# --- API bases pulled from env so this works inside/outside Docker ---
+import os
+BASE = os.getenv("API_BASE_URL", "http://127.0.0.1:4000")     # <— set this in your terminal or .env
+API_OAM = f"{BASE.rstrip('/')}/o_and_m"
+API_SALESMAN = f"{BASE.rstrip('/')}/salesman"
+API_OWNER = f"{BASE.rstrip('/')}/owner"
+
+
+st.set_page_config(page_title="O&M Dashboard", layout="wide")
+st.title("O&M Dashboard")
+
+API_OAM = "http://web-api:4000/o_and_m"
+API_SALESMAN = "http://web-api:4000/salesman"
+
+# -------- helpers --------
+def get_json(url):
+    try:
+        r = requests.get(url, timeout=20)
+        if r.headers.get("content-type","").startswith("application/json"):
+            return r.status_code, r.json()
+        return r.status_code, r.text
     except Exception as e:
-        st.error(f"An error occurred: {e}")
-        return []
+        return 0, {"error": str(e)}
 
-col_left1, col_right1 = st.columns(2)
-with col_left1:
-    with st.container():
-        st.text_input("**Full DB Search**", placeholder="Enter query here", key="full_db_search")
+def post_json(url, payload):
+    try:
+        r = requests.post(url, json=payload, timeout=20)
+        if r.headers.get("content-type","").startswith("application/json"):
+            return r.status_code, r.json()
+        return r.status_code, r.text
+    except Exception as e:
+        return 0, {"error": str(e)}
 
-        clear_column, search_column = st.columns(2)
-        with clear_column:
-            if st.button("Clear Search", type='secondary', use_container_width=True):
-                st.session_state.search_results = None
-                st.toast("Search cleared")
-                st.rerun()
+# -------- top metrics --------
+m1, m2, m3 = st.columns(3)
 
-        with search_column:
-            if st.button("Search DB", type='primary', use_container_width=True):
-                query = (st.session_state.get("full_db_search") or "").strip()
-                if not query:
-                    st.warning("Please enter a search query.")
-                else:
-                    st.toast("Performing search...")
-                    with st.spinner("Searching..."):
-                        data = performSearch(query)
+with m1:
+    st.subheader("Spots")
+    code, data = get_json(f"{API_OAM}/spots/metrics")
+    if code == 200 and isinstance(data, dict):
+        a,b,c = st.columns(3)
+        a.metric("Total", data.get("total",0))
+        b.metric("In use", data.get("in_use",0))
+        c.metric("With issue", data.get("with_issue",0))
+    else:
+        st.error(f"Spots metrics error: {code} {data}")
 
-                    # normalize result to a dict with expected keys
-                    if isinstance(data, dict):
-                        spots = data.get("spots", [])
-                        customers = data.get("customers", [])
-                        orders = data.get("orders", [])
-                        st.session_state.search_results = {
-                            "spots": spots, "customers": customers, "orders": orders
-                        }
-                    else:
-                        st.session_state.search_results = {"spots": [], "customers": [], "orders": []}
+with m2:
+    st.subheader("Customers")
+    code, data = get_json(f"{API_OAM}/customers/metrics")
+    if code == 200 and isinstance(data, dict):
+        a,b,c = st.columns(3)
+        a.metric("Total", data.get("total",0))
+        b.metric("VIP", data.get("vip",0))
+        c.metric("Never ordered", data.get("never_ordered",0))
+        st.caption(f"Avg days since last order: {round(data.get('avg_days',0),2)}")
+    else:
+        st.error(f"Customers metrics error: {code} {data}")
 
-        with st.container(border=True):
-            st.write("**Search Results**")
-
-            results = st.session_state.search_results
-            if not results:
-                st.caption("No search performed yet. Enter a query and click **Search DB**.")
-            else:
-                tabs = st.tabs([
-                    f"Spots ({len(results['spots'])})",
-                    f"Customers ({len(results['customers'])})",
-                    f"Orders ({len(results['orders'])})",
-                ])
-
-                with tabs[0]:
-                    if results["spots"]:
-                        st.dataframe(results["spots"], use_container_width=True)
-                    else:
-                        st.caption("No spots found.")
-
-                with tabs[1]:
-                    if results["customers"]:
-                        st.dataframe(results["customers"], use_container_width=True)
-                    else:
-                        st.caption("No customers found.")
-
-                with tabs[2]:
-                    if results["orders"]:
-                        st.dataframe(results["orders"], use_container_width=True)
-                    else:
-                        st.caption("No orders found.")
-
-with col_right1:
-    with st.container():
-        st.text_input("**Insert Data into DB**", placeholder="Enter query here", key="enter_data_db")
-
-        clear_column, insert_column = st.columns(2)
-        with clear_column:
-            if st.button("Clear Data", type='secondary', use_container_width=True):
-                st.toast("Data cleared")
-
-        with insert_column:
-            if st.button("Insert Data", type='primary', use_container_width=True):
-                st.toast("Performing insert...")
-                try:
-                    payload = json.loads(st.session_state.enter_data_db)
-                    r = requests.post(f"{API_URL}/insert", json=payload)
-                    if r.status_code in (200, 201):
-                        st.success("Insert successful")
-                        st.json(r.json())
-                    else:
-                        st.error(f"Error {r.status_code}: {r.text}")
-                except json.JSONDecodeError:
-                    st.error("Invalid JSON")
-                except Exception as e:
-                    st.error(f"Request failed: {e}")
-
-        with st.container(border=True):
-            st.write("**Preview**")
-            if st.session_state.enter_data_db.strip():
-                try:
-                    st.json(json.loads(st.session_state.enter_data_db))
-                except:
-                    st.write("Invalid JSON. Cannot preview.")
-            else:
-                st.caption("No data to preview. Please enter data and click **Insert Data** to see a preview here.")
+with m3:
+    st.subheader("Orders (90d)")
+    code, data = get_json(f"{API_OAM}/orders/metrics?period=90d")
+    if code == 200 and isinstance(data, dict):
+        a,b = st.columns(2)
+        a.metric("All time total", data.get("total",0))
+        b.metric("Avg order $", round(data.get("avg_price",0),2) if data.get("avg_price") is not None else 0)
+        st.caption(f"Orders in last 90 days: {data.get('last_period',0)}")
+    else:
+        st.error(f"Orders metrics error: {code} {data}")
 
 st.divider()
 
-d1, d2, d3 = st.columns(3)
-with d1:
-    with st.container():
-        spot_id = st.text_input("**Delete Spot by ID**", placeholder="Enter ID", key="delete_spot_id")
-        if st.button("Delete", type='primary', use_container_width=True, key="delete_spot"):
-            if spot_id.strip():
-                try:
-                    r = requests.delete(f"{API_URL}/spot/{spot_id}")
-                    if r.status_code == 200:
-                        st.success(f"Spot {spot_id} deleted")
-                        st.json(r.json())
-                    else:
-                        st.error(f"Error {r.status_code}: {r.text}")
-                except Exception as e:
-                    st.error(f"Request failed: {e}")
-            else:
-                st.warning("Please enter a Spot ID.")
+# -------- tabs: info & quick create --------
+tab1, tab2, tab3, tab4 = st.tabs(["Spots info", "Customer accounts info", "Order info", "Quick insert"])
 
-with d2:
-    with st.container():
-        customer_id = st.text_input("**Delete Customer by ID**", placeholder="Enter ID", key="delete_customer_id")
-        if st.button("Delete", type='primary', use_container_width=True, key="delete_customer"):
-            if customer_id.strip():
-                try:
-                    r = requests.delete(f"{API_URL}/customer/{customer_id}")
-                    if r.status_code == 200:
-                        st.success(f"Customer {customer_id} deleted")
-                        st.json(r.json())
-                    else:
-                        st.error(f"Error {r.status_code}: {r.text}")
-                except Exception as e:
-                    st.error(f"Request failed: {e}")
-            else:
-                st.warning("Please enter a Customer ID.")
+with tab1:
+    st.subheader("Spots info (latest)")
+    limit = st.slider("Limit", 10, 200, 50, 10, key="spots_limit")
+    code, data = get_json(f"{API_OAM}/spots/summary?limit={limit}")
+    if code == 200 and isinstance(data, list) and data:
+        df = pd.DataFrame(data)
+        show = [c for c in ["spotID","address","status","price","estViewPerMonth","monthlyRentCost"] if c in df.columns]
+        st.dataframe(df[show], use_container_width=True, hide_index=True)
+    else:
+        st.info("No spots found or endpoint returned none.")
 
-with d3:
-    with st.container():
-        order_id = st.text_input("**Delete Order by ID**", placeholder="Enter ID", key="delete_order_id")
-        if st.button("Delete", type='primary', use_container_width=True, key="delete_order"):
-            if order_id.strip():
-                try:
-                    r = requests.delete(f"{API_URL}/order/{order_id}")
-                    if r.status_code == 200:
-                        st.success(f"Order {order_id} deleted")
-                        st.json(r.json())
-                    else:
-                        st.error(f"Error {r.status_code}: {r.text}")
-                except Exception as e:
-                    st.error(f"Request failed: {e}")
-            else:
-                st.warning("Please enter an Order ID.")
+with tab2:
+    st.subheader("Customer accounts info")
+    limit = st.slider("Limit", 10, 200, 50, 10, key="cust_limit")
+    code, data = get_json(f"{API_OAM}/customers/summary?limit={limit}")
+    if code == 200 and isinstance(data, list) and data:
+        df = pd.DataFrame(data)
+        show = [c for c in ["cID","fName","lName","email","companyName","VIP","last_order_date","days_since_last_order"] if c in df.columns]
+        st.dataframe(df[show], use_container_width=True, hide_index=True)
+    else:
+        st.info("No customers found or endpoint returned none.")
 
-st.divider()
+with tab3:
+    st.subheader("Order info (recent 90d)")
+    limit = st.slider("Limit", 10, 200, 50, 10, key="orders_limit")
+    code, data = get_json(f"{API_OAM}/orders/summary?period=90d&limit={limit}")
+    if code == 200 and isinstance(data, list) and data:
+        df = pd.DataFrame(data)
+        show = [c for c in ["orderID","date","total","cID"] if c in df.columns]
+        st.dataframe(df[show], use_container_width=True, hide_index=True)
+    else:
+        st.info("No orders in period or endpoint returned none.")
 
-col_left2, col_right2 = st.columns(2)
-with col_left2:
-    with st.container(border=True):
-        with st.container(gap=None):
-            st.write('## TODO List')
-            st.write("**Current: 2**")
+with tab4:
+    st.subheader("Quick insert")
+    sub = st.segmented_control("Entity", ["Spot","Customer","Order"], key="ins_seg")
 
-        with st.container(border=True, gap="small"):
-            with st.container(gap=None):
-                st.write("**Subject:** Invalid Spot Information")
-                st.caption("**Reporter:** Craig #003224")
-                st.caption("2914 NE 13th Dr Gainesville")
+    if sub == "Spot":
+        col = st.columns(3)
+        price = col[0].number_input("price", 0, 10_000, 500)
+        contactTel = col[1].text_input("contactTel", "000-000-0000")
+        address = col[2].text_input("address", "123 Main St, Gainesville, FL")
+        more = st.expander("Optional fields")
+        with more:
+            status = st.selectbox("status", ["free","inuse","planned","w.issue"], index=0)
+            imageURL = st.text_input("imageURL", "")
+            estViewPerMonth = st.number_input("estViewPerMonth", 0, 10_000_000, 1000)
+            monthlyRentCost = st.number_input("monthlyRentCost", 0, 10_000, 0)
+            endTimeOfCurrentOrder = st.text_input("endTimeOfCurrentOrder", "")
+            latitude = st.number_input("latitude", value=29.6516, format="%.6f")
+            longitude = st.number_input("longitude", value=-82.3248, format="%.6f")
+        if st.button("Create spot", type="primary"):
+            payload = {
+                "entity":"spot","price":price,"contactTel":contactTel,"address":address,
+                "status":status,"imageURL":imageURL or None,"estViewPerMonth":estViewPerMonth,
+                "monthlyRentCost":monthlyRentCost,"endTimeOfCurrentOrder":endTimeOfCurrentOrder or None,
+                "latitude":latitude,"longitude":longitude
+            }
+            code, data = post_json(f"{API_OAM}/insert", payload)
+            st.success(data) if code in (200,201) else st.error(f"{code} {data}")
 
-            st.image("https://bloximages.newyork1.vip.townnews.com/kq2.com/content/tncms/assets/v3/editorial/9/30/9304a95a-99cb-11ee-9aaf-8fda7d79b88c/6579cc9dbaf31.image.jpg")
+    if sub == "Customer":
+        col = st.columns(3)
+        fName = col[0].text_input("fName","Liam")
+        lName = col[1].text_input("lName","Miller")
+        email = col[2].text_input("email","liam@example.com")
+        more = st.expander("Optional fields")
+        with more:
+            position = st.text_input("position","Analyst")
+            companyName = st.text_input("companyName","Skyvu")
+            totalOrderTimes = st.number_input("totalOrderTimes",0,1000,0)
+            VIP = st.checkbox("VIP", False)
+            avatarURL = st.text_input("avatarURL","")
+            balance = st.number_input("balance",0,1_000_000,0)
+            TEL = st.text_input("TEL","")
+        if st.button("Create customer", type="primary"):
+            payload = {
+                "entity":"customer","fName":fName,"lName":lName,"email":email,
+                "position":position,"companyName":companyName,"totalOrderTimes":int(totalOrderTimes),
+                "VIP":bool(VIP),"avatarURL":avatarURL or None,"balance":int(balance),"TEL":TEL or None
+            }
+            code, data = post_json(f"{API_OAM}/insert", payload)
+            st.success(data) if code in (200,201) else st.error(f"{code} {data}")
 
-            with st.container(gap="small"):
-                if st.button("Set subject as 'w.issue'",
-                             type='primary', use_container_width=True, key="wissue1"):
-                    st.toast("Marked as issue")
-                if st.button("Remove from DB",
-                             type='primary', use_container_width=True, key="remove1"):
-                    st.toast("Removed from DB")
-                if st.button("Revoke this report",
-                             type='primary', use_container_width=True, key="revoke1"):
-                    st.toast("Revoked")
-
-        with st.container(border=True, gap="small"):
-            with st.container(gap=None):
-                st.write("**Subject:** New employee acquiring account authorization")
-                st.caption("**Name:** Kyle")
-                st.caption("**Position:** Sales")
-
-            st.image("https://preview.redd.it/pd70boo4s2u71.jpg?auto=webp&s=322e6e589b15a8898de5b5ef82fe35542a5d3840")
-
-            with st.container(gap="small"):
-                if st.button("Authorize",
-                             type='primary', use_container_width=True, key="authorize1"):
-                    st.toast("Authorized Kyle")
-                if st.button("Reject",
-                             type='primary', use_container_width=True, key="reject1"):
-                    st.toast("Rejected Kyle's authorization")
-
-with col_right2:
-    with st.container(border=True):
-        st.write("**Spots Info:**")
-        try:
-            r = requests.get(f"{API_URL}/spots/metrics")
-            if r.status_code == 200:
-                data = r.json()
-                m1, m2, m3, m4 = st.columns(4)
-                m1.metric("Total", data["total"])
-                m2.metric("In-use", data["in_use"])
-                m3.metric("Free", data["free"])
-                m4.metric("W.Issue", data["with_issue"])
-            else:
-                st.error(f"Error {r.status_code}: {r.text}")
-        except Exception as e:
-            st.error(f"Failed to fetch spots metrics: {e}")
-
-        if st.button("Print details", use_container_width=True, key="print_spots"):
-            try:
-                r = requests.get(f"{API_URL}/spots/summary?limit=10")
-                if r.status_code == 200:
-                    st.json(r.json())
-                else:
-                    st.error(f"Error {r.status_code}: {r.text}")
-            except Exception as e:
-                st.error(f"Failed to fetch spot details: {e}")
-
-    with st.container(border=True):
-        st.write("**Customers Account Info:**")
-        try:
-            r = requests.get(f"{API_URL}/customers/metrics")
-            if r.status_code == 200:
-                data = r.json()
-                c1, c2, c3, c4 = st.columns(4)
-                c1.metric("Total", data["total"])
-                c2.metric("VIP", data["vip"])
-                c3.metric("Never Ordered", data["never_ordered"])
-                c4.metric("Avg Order Time", data["avg_order_time"])
-            else:
-                st.error(f"Error {r.status_code}: {r.text}")
-        except Exception as e:
-            st.error(f"Failed to fetch customers metrics: {e}")
-
-        if st.button("Print details", use_container_width=True, key="print_customers"):
-            try:
-                r = requests.get(f"{API_URL}/customers/summary?limit=10")
-                if r.status_code == 200:
-                    st.json(r.json())
-                else:
-                    st.error(f"Error {r.status_code}: {r.text}")
-            except Exception as e:
-                st.error(f"Failed to fetch customer details: {e}")
-
-    with st.container(border=True):
-        st.write("**Order Info:**")
-        try:
-            r = requests.get(f"{API_URL}/orders/metrics", params={"period": "90d"})
-            if r.status_code == 200:
-                data = r.json()
-                o1, o2, o3 = st.columns(3)
-                o1.metric("Total", data["total"])
-                o2.metric("Avg price", f"${data['avg_price']}")
-                o3.metric("Last 90 days", data["last_period"])
-            else:
-                st.error(f"Error {r.status_code}: {r.text}")
-        except Exception as e:
-            st.error(f"Failed to fetch orders metrics: {e}")
-
-        if st.button("Print details", use_container_width=True, key="print_orders"):
-            try:
-                r = requests.get(f"{API_URL}/orders/summary?period=90d&limit=10")
-                if r.status_code == 200:
-                    st.json(r.json())
-                else:
-                    st.error(f"Error {r.status_code}: {r.text}")
-            except Exception as e:
-                st.error(f"Failed to fetch order details: {e}")
+    if sub == "Order":
+        col = st.columns(3)
+        date_str = col[0].text_input("date (YYYY-MM-DD)", str(date.today()))
+        total_amt = col[1].number_input("total", 0, 1_000_000, 0)
+        cID = col[2].number_input("cID (customer id)", 1, 999999, 1)
+        if st.button("Create order", type="primary"):
+            payload = {"entity":"order","date":date_str,"total":int(total_amt),"cID":int(cID)}
+            code, data = post_json(f"{API_OAM}/insert", payload)
+            st.success(data) if code in (200,201) else st.error(f"{code} {data}")
