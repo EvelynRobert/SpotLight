@@ -121,3 +121,83 @@ def salesman_spots():
         return jsonify(rows), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@salesman_bp.post("/spotorders/<int:spot_id>/<int:order_id>")
+def add_spot_to_order(spot_id: int, order_id: int):
+    """
+    Attach a spot to an order (SpotOrder bridge).
+    Returns: {"added": {"orderID": ..., "spotID": ...}}
+    """
+    try:
+        conn = _get_conn(); cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO SpotOrder (orderID, spotID) VALUES (%s, %s)",
+            (order_id, spot_id)
+        )
+        conn.commit()
+        cur.close(); conn.close()
+        return {"added": {"orderID": order_id, "spotID": spot_id}}, 201
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+@salesman_bp.delete("/spotorders/<int:spot_id>/<int:order_id>")
+def remove_spot_from_order(spot_id: int, order_id: int):
+    """
+    Remove a spot from an order (SpotOrder bridge).
+    Returns: {"deleted": {"orderID": ..., "spotID": ...}, "rows_affected": N}
+    """
+    try:
+        conn = _get_conn(); cur = conn.cursor()
+        cur.execute(
+            "DELETE FROM SpotOrder WHERE orderID=%s AND spotID=%s",
+            (order_id, spot_id)
+        )
+        rows = cur.rowcount
+        conn.commit()
+        cur.close(); conn.close()
+        return {"deleted": {"orderID": order_id, "spotID": spot_id}, "rows_affected": rows}, 200
+    except Exception as e:
+        return {"error": str(e)}, 500
+    
+@salesman_bp.get("/orders/history")
+def orders_history():
+    """
+    Recent processed orders for a salesman view.
+    Falls back to Orders if ProcessedOrder table doesn't exist.
+    """
+    try:
+        conn = _get_conn(); cur = conn.cursor(dictionary=True)
+
+        # Use ProcessedOrder if available
+        try:
+            cur.execute("SHOW TABLES LIKE 'ProcessedOrder'")
+            has_po = cur.fetchone() is not None
+        except Exception:
+            has_po = False
+
+        if has_po:
+            cur.execute(
+                """
+                SELECT *
+                FROM ProcessedOrder
+                ORDER BY orderID DESC
+                LIMIT 100
+                """
+            )
+        else:
+            cur.execute(
+                """
+                SELECT *
+                FROM Orders
+                ORDER BY orderID DESC
+                LIMIT 100
+                """
+            )
+
+        rows = cur.fetchall()
+        cur.close(); conn.close()
+        return rows, 200
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+

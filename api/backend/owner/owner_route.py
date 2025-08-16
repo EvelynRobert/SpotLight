@@ -108,4 +108,28 @@ def delete_review(rid: int):
         return jsonify({"deleted": rid}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@owner_bp.put("/spots/<int:spot_id>/status")
+def update_spot_status(spot_id: int):
+    """
+    Owner updates a spot's status (e.g., free, inuse, planned, w.issue).
+    Body: { "status": "free" }
+    """
+    body = request.get_json(silent=True) or {}
+    new_status = (body.get("status") or "").strip()
+    if not new_status:
+        return {"error": "Missing 'status' in JSON body"}, 400
+    try:
+        conn = _get_conn(); cur = conn.cursor(dictionary=True)
+        cur.execute("UPDATE Spot SET status=%s WHERE spotID=%s", (new_status, spot_id))
+        conn.commit()
+        cur.execute("SELECT spotID, address, status, latitude, longitude FROM Spot WHERE spotID=%s", (spot_id,))
+        row = cur.fetchone()
+        cur.close(); conn.close()
+        if not row:
+            return {"error": f"spotID {spot_id} not found"}, 404
+        return row, 200
+    except Exception as e:
+        return {"error": str(e)}, 500
+
 

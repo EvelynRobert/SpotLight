@@ -182,40 +182,6 @@ def insert_data():
         return jsonify({"error": str(e)}), 500
 
 
-@o_and_m.route("/spot/<int:spot_id>", methods=["DELETE"])
-def delete_spot(spot_id: int):
-    try:
-        cursor = db.get_db().cursor()
-        cursor.execute("DELETE FROM Spot WHERE spotID = %s", (spot_id,))
-        db.get_db().commit()
-        cursor.close()
-        return jsonify({"message": "deleted", "spotID": spot_id}), 200
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@o_and_m.route("/customer/<int:c_id>", methods=["DELETE"])
-def delete_customer(c_id: int):
-    try:
-        cursor = db.get_db().cursor()
-        cursor.execute("DELETE FROM Customers WHERE cID = %s", (c_id,))
-        db.get_db().commit()
-        cursor.close()
-        return jsonify({"message": "deleted", "cID": c_id}), 200
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@o_and_m.route("/order/<int:order_id>", methods=["DELETE"])
-def delete_order(order_id: int):
-    try:
-        cursor = db.get_db().cursor()
-        cursor.execute("DELETE FROM Orders WHERE orderID = %s", (order_id,))
-        db.get_db().commit()
-        cursor.close()
-        return jsonify({"message": "deleted", "orderID": order_id}), 200
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
 
 
 @o_and_m.route("/spots/metrics", methods=["GET"])
@@ -373,22 +339,6 @@ def orders_summary():
         data = cursor.fetchall()
         cursor.close()
         return jsonify(data), 200
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@o_and_m.route("/spots/<int:spot_id>/status", methods=["PUT"])
-def update_spot_status(spot_id: int):
-    try:
-        payload = request.get_json(silent=True) or {}
-        status = payload.get("status")
-        if status not in ("free", "inuse", "w.issue", "planned"):
-            return jsonify({"error": "Invalid status"}), 400
-        cursor = db.get_db().cursor()
-        cursor.execute("UPDATE Spot SET status = %s WHERE spotID = %s", (status, spot_id))
-        db.get_db().commit()
-        cursor.close()
-        return jsonify({"message": "updated", "spotID": spot_id, "status": status}), 200
     except Error as e:
         return jsonify({"error": str(e)}), 500
 
