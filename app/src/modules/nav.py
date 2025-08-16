@@ -20,6 +20,7 @@ def SalesmanPageNav():
 def AdminPageNav():
     st.sidebar.page_link("pages/20_dashboard.py", label="O&M Dashboard", icon="🖥️")
     st.sidebar.page_link("pages/21_statistics.py", label="Statistics", icon="📊")
+    st.sidebar.page_link("pages/22_management_map.py", label="Management Map", icon="🗺️")
 
 
 # --------------------------------Links Function -----------------------------------------------
