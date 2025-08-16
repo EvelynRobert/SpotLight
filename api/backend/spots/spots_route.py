@@ -206,3 +206,92 @@ def delete_spot(spot_id: int):
     except Error as e:
         current_app.logger.error(f"delete_spot error: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+@spots.route("/near", methods=["GET"])
+def find_spots_near():
+    try:
+        lat_str = request.args.get("lat")
+        lng_str = request.args.get("lng")
+        radius_str = request.args.get("radius_km")
+        status = request.args.get("status")
+
+        if not lat_str or not lng_str or not radius_str:
+            return jsonify({"error": "Missing required query params: lat, lng, radius_km"}), 400
+        try:
+            lat = float(lat_str)
+            lng = float(lng_str)
+            radius_km = float(radius_str)
+        except ValueError:
+            return jsonify({"error": "lat, lng, and radius_km must be numeric"}), 400
+
+        if status and not _valid_spot_status(status):
+            return jsonify({"error": "Invalid status"}), 400
+
+        cursor = db.get_db().cursor()
+        params = [lat, lng, lat]
+        query = (
+            "SELECT spotID, price, contactTel, estViewPerMonth, monthlyRentCost, "
+            "endTimeOfCurrentOrder, status, address, longitude, latitude, "
+            "(6371 * acos( cos(radians(%s)) * cos(radians(latitude)) * "
+            "cos(radians(longitude) - radians(%s)) + sin(radians(%s)) * sin(radians(latitude)) )) AS distance_km "
+            "FROM Spot WHERE latitude IS NOT NULL AND longitude IS NOT NULL "
+        )
+        if status:
+            query += "AND status = %s "
+            params.append(status)
+        query += "HAVING distance_km <= %s ORDER BY distance_km ASC LIMIT 100"
+        params.append(radius_km)
+
+        cursor.execute(query, tuple(params))
+        data = cursor.fetchall()
+        cursor.close()
+        return jsonify(data), 200
+    except Error as e:
+        current_app.logger.error(f"find_spots_near error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@spots.route("/<int:spot_id>/status/<status>", methods=["POST"])
+def change_spot_status(spot_id: int, status: str):
+    try:
+        if not _valid_spot_status(status):
+            return jsonify({"error": "Invalid status"}), 400
+        cursor = db.get_db().cursor()
+        cursor.execute("UPDATE Spot SET status = %s WHERE spotID = %s", (status, spot_id))
+        db.get_db().commit()
+        cursor.close()
+        return jsonify({"message": "updated", "spotID": spot_id, "status": status}), 200
+    except Error as e:
+        current_app.logger.error(f"change_spot_status error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@spots.route("/search", methods=["GET"])
+def search_spots():
+    try:
+        key_word = (request.args.get("key_word") or "").strip()
+        top_n_raw = (request.args.get("top_n") or "10").strip()
+        if not key_word:
+            return jsonify({"error": "Missing key_word"}), 400
+        try:
+            top_n = int(top_n_raw)
+        except Exception:
+            return jsonify({"error": "top_n must be an integer"}), 400
+        # Clamp to a sane range
+        top_n = max(1, min(top_n, 200))
+
+        cursor = db.get_db().cursor()
+        query = (
+            "SELECT spotID, price, contactTel, estViewPerMonth, monthlyRentCost, "
+            "endTimeOfCurrentOrder, status, address, longitude, latitude "
+            "FROM Spot WHERE MATCH(address) AGAINST (%s IN NATURAL LANGUAGE MODE) "
+            "LIMIT %s"
+        )
+        cursor.execute(query, (key_word, top_n))
+        data = cursor.fetchall()  # if no rows, this will be []
+        cursor.close()
+        return jsonify(data), 200
+    except Error as e:
+        current_app.logger.error(f"search_spots error: {e}")
+        return jsonify({"error": str(e)}), 500

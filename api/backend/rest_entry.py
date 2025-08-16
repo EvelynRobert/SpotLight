@@ -10,6 +10,7 @@ from backend.ngos.ngo_routes import ngos
 from backend.o_and_m.o_and_m_routes import o_and_m
 from backend.customers.customer_routes import customer
 from backend.spots.spots_route import spots
+from backend.orders.orders_routes import orders
 
 def create_app():
     app = Flask(__name__)
@@ -53,6 +54,7 @@ def create_app():
     app.register_blueprint(o_and_m, url_prefix="/o_and_m")
     app.register_blueprint(customer, url_prefix="/customer")
     app.register_blueprint(spots, url_prefix="/spots")
+    app.register_blueprint(orders)
 
     # Don't forget to return the app object
     return app
