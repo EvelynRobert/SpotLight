@@ -1,60 +1,90 @@
 # pages/Account.py
 import streamlit as st
+import requests
 from modules.nav import SideBarLinks
 
-st.set_page_config(page_title="Account", layout="wide")
+API_URL = "http://web-api:4000/customer"
+# Hardcoded for demo purposes
+USERNAME = "Eric.C"
+C_ID = 1
+
+st.title("Your Profile")
 
 SideBarLinks()
 
-st.title('Your Profile')
+@st.cache_data(ttl=30)
+def load_profile():
+    r = requests.get(f"{API_URL}/{C_ID}", timeout=10)
+    if r.status_code == 200:
+        data = r.json()
+        return {
+            "username": USERNAME,
+            "company": data["companyName"],
+            "phone": data["TEL"],
+            "email": data["email"],
+            "industry": "N/A",
+            "position": data["position"],
+            "avatar_url": data["avatarURL"],
+            "balance": data["balance"]
+        }
+    return None
 
 if "profile" not in st.session_state:
-    st.session_state.profile = {
-        "username": "Eric.C",
-        "company": "Florida Nuts INC.",
-        "phone": "(323) 748-2748",
-        "email": "eric.c@gmail.com",
-        "industry": "Food Manufacturing",
-        "position": "Founder/CEO",
-        "avatar_url": "https://i.pravatar.cc/200?img=13",
+    st.session_state.profile = load_profile() or {
+        "username": USERNAME,
+        "company": "",
+        "phone": "",
+        "email": "",
+        "industry": "",
+        "position": "",
+        "avatar_url": "",
+        "balance": 0
     }
-
-# Track per-field edit modes
-for k in ["company", "phone", "email", "industry", "position"]:
-    st.session_state.setdefault(f"edit_{k}", False)
 
 left, right = st.columns([1, 2])
 
-def row(label, value):
+def row(label, key):
     data, modify = st.columns([3, 1])
     with data:
         with st.container(gap=None):
-            st.write(f"**{value}**")
+            st.write(f"**{st.session_state.profile[key]}**")
             st.caption(label)
     with modify:
-        if st.button("✏️", key=f"edit_{label}", type="secondary", use_container_width=True):
-            st.toast(f"Editing {label}")
+        if st.button("✏️", key=f"edit_{key}", type="secondary", use_container_width=True):
+            new_val = st.text_input(f"Update {label}", value=st.session_state.profile[key], key=f"input_{key}")
+            if st.button("Save", key=f"save_{key}"):
+                st.session_state.profile[key] = new_val
+                payload = {
+                    "fName": "Eric",
+                    "lName": "C",
+                    "email": st.session_state.profile["email"],
+                    "position": st.session_state.profile["position"],
+                    "companyName": st.session_state.profile["company"],
+                    "totalOrderTimes": 0,
+                    "VIP": 0,
+                    "avatarURL": st.session_state.profile["avatar_url"],
+                    "balance": st.session_state.profile["balance"],
+                    "TEL": st.session_state.profile["phone"],
+                }
+                requests.post(f"{API_URL}/{C_ID}", json=payload, timeout=10)
+                st.toast(f"{label} updated")
 
 with left:
     with st.container(border=True, gap=None):
         ac, bc, cc = st.columns([1, 2, 1])
         with bc:
-            st.image("https://i.pravatar.cc/200?img=13", width=120, caption="")
+            st.image(st.session_state.profile["avatar_url"], width=120)
         st.divider()
-
         st.caption("Username")
-        st.write("**Eric.C**")
+        st.write(f"**{st.session_state.profile['username']}**")
         st.divider()
-
-        # Editable fields
-        row("Company", "Florida Nuts INC.")
-        row("Tel Number", "(323) 748-2748")
-        row("Email", "eric.c@gmail.com")
+        row("Company", "company")
+        row("Tel Number", "phone")
+        row("Email", "email")
         st.divider()
-        row("Industry", "Food Manufacturing")
-        row("Position", "Founder/CEO")
+        row("Industry", "industry")
+        row("Position", "position")
 
-# ================= Right: Accordions =========================================
 with right:
     with st.expander("My Orders", expanded=True):
         st.info("You don't have any order yet!")
@@ -69,10 +99,9 @@ with right:
     with st.expander("My Balance", expanded=False):
         bal_l, bal_r = st.columns([2, 1])
         with bal_l:
-            st.metric("Current Balance", "$0.00")
+            st.metric("Current Balance", f"${st.session_state.profile['balance']:.2f}")
         with bal_r:
             st.button("Add Funds", type="primary", use_container_width=True)
-        st.caption("Balance updates after successful payment settlement.")
 
     with st.expander("Manage Payment Method", expanded=False):
         st.write("No saved cards.")
@@ -89,10 +118,19 @@ with right:
         with c5:
             st.button("Add Card", type="primary", use_container_width=True)
 
-    with st.expander("Feedbacks", expanded=False):
-        fb = st.text_area("Leave your feedback", placeholder="Tell us what we can improve…")
+    with st.expander("Feedback", expanded=False):
+        if "feedback" not in st.session_state:
+            st.session_state.feedback = ""
+
+        st.text_area(
+            "Leave your feedback",
+            placeholder="Tell us what we can improve…",
+            key="feedback"
+        )
+
         cols = st.columns([1, 1])
-        if cols[0].button("Submit Feedback", type="primary"):
+        if cols[1].button("Clear", use_container_width=True):
+            st.toast("Feedback cleared")
+
+        if cols[0].button("Submit Feedback", type="primary", use_container_width=True):
             st.toast("Thanks for the feedback!")
-        if cols[1].button("Clear"):
-            st.session_state["Feedbacks-Leave your feedback"] = ""

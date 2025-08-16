@@ -32,7 +32,6 @@ with col_left1:
         clear_column, search_column = st.columns(2)
         with clear_column:
             if st.button("Clear Search", type='secondary', use_container_width=True):
-                st.session_state.full_db_search = ""
                 st.session_state.search_results = None
                 st.toast("Search cleared")
                 st.rerun()
@@ -96,7 +95,6 @@ with col_right1:
         clear_column, insert_column = st.columns(2)
         with clear_column:
             if st.button("Clear Data", type='secondary', use_container_width=True):
-                st.session_state.enter_data_db = ""
                 st.toast("Data cleared")
 
         with insert_column:
