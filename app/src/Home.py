@@ -56,7 +56,7 @@ if st.button('Act as a Salesman',
              use_container_width=True):
     st.session_state['authenticated'] = True
     st.session_state['role'] = 'salesman'
-    st.switch_page('pages/10_workbench.py')
+    st.switch_page('pages/40_Sales_Leads.py')
 
 if st.button('Act as an Owner',
              type='primary',
