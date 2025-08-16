@@ -14,3 +14,8 @@ secrets/
 # env + venv
 *.env
 .venv/
+app/src/.venv/
+api/.venv/
+__pycache__/
+*.pyc
+.DS_Store

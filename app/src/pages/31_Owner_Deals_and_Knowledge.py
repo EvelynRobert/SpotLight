@@ -130,5 +130,3 @@ with tabN:
     if st.button("Add note"):
         nc, nd = api("POST", f"/owner/deals/{int(nid)}/notes", json={"note": note})
         st.success(nd) if nc in (200,201) else st.error(f"{nc} {nd}")
-
-
