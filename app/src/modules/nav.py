@@ -14,10 +14,11 @@ def CustomerPageNav():
     st.sidebar.page_link("pages/02_search.py", label="Search", icon="🔍")
 
 def SalesmanPageNav():
-    st.sidebar.page_link("pages/10_workbench.py", label="Workbench", icon="🔧")
-    # st.sidebar.page_link("pages/02_Map_Demo.py", label="Map Demo", icon="🗺️")
-    # st.sidebar.page_link("pages/03_World_Bank.py", label="World Bank Data", icon="🌍")
-    # st.sidebar.page_link("pages/04_API_Testing.py", label="API Testing", icon="🔌")
+    st.sidebar.page_link("pages/10_workbench.py", label="Workbench", icon="🔧")  
+    st.sidebar.page_link("pages/04_Salesman_Workbench.py",label="Map", icon="🗺️")
+    st.sidebar.page_link("pages/40_Sales_Leads.py", label="📇 Leads", icon="📇")
+    st.sidebar.page_link("pages/41_Sales_Repeat_Clients.py", label="🔁 Repeat Clients", icon="🔁")
+    st.sidebar.page_link("pages/42_Sales_Spots.py", label="📍 Spots", icon="📍")
 
 def AdminPageNav():
     st.sidebar.page_link("pages/20_dashboard.py", label="O&M Dashboard", icon="🖥️")
