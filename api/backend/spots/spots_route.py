@@ -217,44 +217,6 @@ def delete_spot(spot_id: int):
         _close(cursor, conn)
 
 
-@spots.route("/<int:spot_id>/status", methods=["PUT"])
-def change_status_body(spot_id: int):
-    """PUT /spots/{id}/status  with JSON: {"status":"free|inuse|planned|w.issue"}"""
-    conn = cursor = None
-    try:
-        status = (request.get_json(silent=True) or {}).get("status")
-        if not _valid_status(status):
-            return jsonify({"error": "Invalid status"}), 400
-        conn = db.connect()
-        cursor = conn.cursor()
-        cursor.execute("UPDATE Spot SET status=%s WHERE spotID=%s", (status, spot_id))
-        conn.commit()
-        return jsonify({"message": "updated", "spotID": spot_id, "status": status}), 200
-    except Exception as e:
-        current_app.logger.error(f"change_status_body error: {e}")
-        return jsonify({"error": str(e)}), 500
-    finally:
-        _close(cursor, conn)
-
-
-@spots.route("/<int:spot_id>/status/<status>", methods=["POST"])
-def change_status_path(spot_id: int, status: str):
-    """POST /spots/{id}/status/{status} (alt style kept for compatibility)"""
-    conn = cursor = None
-    try:
-        if not _valid_status(status):
-            return jsonify({"error": "Invalid status"}), 400
-        conn = db.connect()
-        cursor = conn.cursor()
-        cursor.execute("UPDATE Spot SET status=%s WHERE spotID=%s", (status, spot_id))
-        conn.commit()
-        return jsonify({"message": "updated", "spotID": spot_id, "status": status}), 200
-    except Exception as e:
-        current_app.logger.error(f"change_status_path error: {e}")
-        return jsonify({"error": str(e)}), 500
-    finally:
-        _close(cursor, conn)
-
 
 @spots.route("/near", methods=["GET"])
 def find_spots_near():

@@ -159,47 +159,6 @@ def get_order(order_id: int):
         return jsonify({"error": str(e)}), 500
 
 
-@orders.route("/spotorders/<int:spot_id>/<int:order_id>", methods=["POST"])
-def add_spot_to_order(spot_id: int, order_id: int):
-    try:
-        cursor = db.get_db().cursor()
-        # Optional: prevent duplicates
-        cursor.execute(
-            "SELECT 1 FROM SpotOrder WHERE spotID = %s AND orderID = %s",
-            (spot_id, order_id),
-        )
-        if cursor.fetchone():
-            cursor.close()
-            return jsonify({"message": "already exists", "spotID": spot_id, "orderID": order_id}), 200
-
-        cursor.execute(
-            "INSERT INTO SpotOrder (spotID, orderID) VALUES (%s, %s)",
-            (spot_id, order_id),
-        )
-        db.get_db().commit()
-        cursor.close()
-        return jsonify({"message": "created", "spotID": spot_id, "orderID": order_id}), 201
-    except Error as e:
-        current_app.logger.error(f"add_spot_to_order error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-@orders.route("/spotorders/<int:spot_id>/<int:order_id>", methods=["DELETE"])
-def remove_spot_from_order(spot_id: int, order_id: int):
-    try:
-        cursor = db.get_db().cursor()
-        cursor.execute(
-            "DELETE FROM SpotOrder WHERE spotID = %s AND orderID = %s",
-            (spot_id, order_id),
-        )
-        db.get_db().commit()
-        cursor.close()
-        return jsonify({"message": "deleted", "spotID": spot_id, "orderID": order_id}), 200
-    except Error as e:
-        current_app.logger.error(f"remove_spot_from_order error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
 @orders.route("/to_be_processed_order", methods=["GET"])
 def list_to_be_processed_orders():
     try:
@@ -213,3 +172,4 @@ def list_to_be_processed_orders():
     except Error as e:
         current_app.logger.error(f"list_to_be_processed_orders error: {e}")
         return jsonify({"error": str(e)}), 500
+
