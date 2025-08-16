@@ -1,3 +1,4 @@
+USE `SpotLight`;
 insert into Orders (orderID, total, cID, date) values (1, 1152, 1, '2025-08-14');
 insert into Orders (orderID, total, cID, date) values (2, 2850, 1, '2025-08-14');
 insert into Orders (orderID, total, cID, date) values (3, 744, 1, '2025-08-14');

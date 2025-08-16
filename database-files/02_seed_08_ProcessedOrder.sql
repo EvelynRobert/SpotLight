@@ -1,3 +1,4 @@
+USE `SpotLight`;
 insert into ProcessedOrder (orderID, processorID, processTime) values (1, 3, '2025-08-15 18:03:14');
 insert into ProcessedOrder (orderID, processorID, processTime) values (46, 6, '2025-02-02 13:04:32');
 insert into ProcessedOrder (orderID, processorID, processTime) values (166, 22, '2022-07-20 18:31:13');

@@ -1,3 +1,4 @@
+USE `SpotLight`;
 insert into SpotOrder (spotID, Orderid) values (32, 1);
 insert into SpotOrder (spotID, Orderid) values (35, 2);
 insert into SpotOrder (spotID, Orderid) values (6, 3);

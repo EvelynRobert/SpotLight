@@ -1,3 +1,4 @@
+USE `SpotLight`;
 insert into OandM (eID) values ('1');
 insert into OandM (eID) values ('2');
 insert into OandM (eID) values ('7');

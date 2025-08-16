@@ -1,3 +1,4 @@
+USE `SpotLight`;
 insert into ToBeProcessedOrder (orderID) values ('11');
 insert into ToBeProcessedOrder (orderID) values ('12');
 insert into ToBeProcessedOrder (orderID) values ('13');

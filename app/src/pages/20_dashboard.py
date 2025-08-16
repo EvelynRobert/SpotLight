@@ -1,12 +1,28 @@
 import streamlit as st
 from modules.nav import SideBarLinks
+import requests
 
 SideBarLinks()
 
 st.title('O&M Dashboard')
 
-col_left1, col_right1 = st.columns(2)
+API = "http://web-api:4000/o_and_m"
+st.session_state.setdefault("search_results", None)
+st.session_state.setdefault("full_db_search", "")
 
+def performSearch(query):
+    try:
+        response = requests.get(f"{API}/search", params={"query": query})
+        if response.status_code == 200:
+            return response.json()
+        else:
+            st.error("Error fetching search results")
+            return []
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+        return []
+
+col_left1, col_right1 = st.columns(2)
 with col_left1:
     with st.container():
         st.text_input("**Full DB Search**", placeholder="Enter query here", key="full_db_search")
@@ -14,16 +30,62 @@ with col_left1:
         clear_column, search_column = st.columns(2)
         with clear_column:
             if st.button("Clear Search", type='secondary', use_container_width=True):
+                st.session_state.full_db_search = ""
+                st.session_state.search_results = None
                 st.toast("Search cleared")
+                st.rerun()
 
         with search_column:
             if st.button("Search DB", type='primary', use_container_width=True):
-                st.toast("Performing search...")
+                query = (st.session_state.get("full_db_search") or "").strip()
+                if not query:
+                    st.warning("Please enter a search query.")
+                else:
+                    st.toast("Performing search...")
+                    with st.spinner("Searching..."):
+                        data = performSearch(query)
+
+                    # normalize result to a dict with expected keys
+                    if isinstance(data, dict):
+                        spots = data.get("spots", [])
+                        customers = data.get("customers", [])
+                        orders = data.get("orders", [])
+                        st.session_state.search_results = {
+                            "spots": spots, "customers": customers, "orders": orders
+                        }
+                    else:
+                        st.session_state.search_results = {"spots": [], "customers": [], "orders": []}
 
         with st.container(border=True):
             st.write("**Search Results**")
-            st.write("No results found for your query.")
-            # TODO: Implement search functionality to display results based on the query entered in the text input.
+
+            results = st.session_state.search_results
+            if not results:
+                st.caption("No search performed yet. Enter a query and click **Search DB**.")
+            else:
+                tabs = st.tabs([
+                    f"Spots ({len(results['spots'])})",
+                    f"Customers ({len(results['customers'])})",
+                    f"Orders ({len(results['orders'])})",
+                ])
+
+                with tabs[0]:
+                    if results["spots"]:
+                        st.dataframe(results["spots"], use_container_width=True)
+                    else:
+                        st.caption("No spots found.")
+
+                with tabs[1]:
+                    if results["customers"]:
+                        st.dataframe(results["customers"], use_container_width=True)
+                    else:
+                        st.caption("No customers found.")
+
+                with tabs[2]:
+                    if results["orders"]:
+                        st.dataframe(results["orders"], use_container_width=True)
+                    else:
+                        st.caption("No orders found.")
 
 with col_right1:
     with st.container():

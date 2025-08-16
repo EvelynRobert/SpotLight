@@ -1,3 +1,4 @@
+USE `SpotLight`;
 insert into Customers (cID, fName, lName, email, position, companyName, totalOrderTimes, VIP, avatarURL, balance, TEL) values (1, 'Tadio', 'Rofe', 'trofe0@delicious.com', 'Analyst Programmer', 'Twitterbridge', 7, true, 'http://dummyimage.com/216x100.png/5fa2dd/ffffff', 32800, '940-895-0547');
 insert into Customers (cID, fName, lName, email, position, companyName, totalOrderTimes, VIP, avatarURL, balance, TEL) values (2, 'Kassia', 'Riglar', 'kriglar1@github.io', 'VP Marketing', 'Skyvu', 2, false, 'http://dummyimage.com/183x100.png/dddddd/000000', 32468, '289-583-0225');
 insert into Customers (cID, fName, lName, email, position, companyName, totalOrderTimes, VIP, avatarURL, balance, TEL) values (3, 'Giuditta', 'Boeck', 'gboeck2@imdb.com', 'Statistician I', 'Jaloo', 1, false, 'http://dummyimage.com/111x100.png/dddddd/000000', 8604, '222-536-8750');

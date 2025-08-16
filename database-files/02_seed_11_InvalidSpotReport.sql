@@ -1,3 +1,4 @@
+USE `SpotLight`;
 insert into InvalidSpotReport (orderID, rID) values (21, 1);
 insert into InvalidSpotReport (orderID, rID) values (30, 2);
 insert into InvalidSpotReport (orderID, rID) values (70, 3);

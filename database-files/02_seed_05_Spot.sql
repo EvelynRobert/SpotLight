@@ -1,3 +1,4 @@
+USE `SpotLight`;
 insert into Spot (spotID, price, monthlyRentCost, contactTel, imageURL, estViewPerMonth, status, address, latitude, longitude) values (1, 335, 208.84, '711-698-0871', 'https://source.unsplash.com/random/200x200/?billboard', 192119, 'free', '901 NW 8TH AVE, STE B3-5', '29.65942', '-82.33447');
 insert into Spot (spotID, price, monthlyRentCost, contactTel, imageURL, estViewPerMonth, status, address, latitude, longitude) values (2, 508, 295.46, '910-615-0901', 'https://source.unsplash.com/random/200x200/?billboard', 32919, 'planned', '2160 NE 1ST BLVD', '29.67306', '-82.32377');
 insert into Spot (spotID, price, monthlyRentCost, contactTel, imageURL, estViewPerMonth, status, address, latitude, longitude) values (3, 957, 576.97, '158-439-3298', 'https://source.unsplash.com/random/200x200/?billboard', 298508, 'free', '6419 W NEWBERRY RD, H-3', '29.65711', '-82.41033');

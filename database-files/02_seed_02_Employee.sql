@@ -1,3 +1,4 @@
+USE `SpotLight`;
 insert into Employee (eID, fName, lName, email, position, Avatar_URL, Field) values (1, 'Norean', 'Defau', 'ndefau0@cornell.edu', 'Support', 'http://dummyimage.com/171x100.png/dddddd/000000', 'Admin');
 insert into Employee (eID, fName, lName, email, position, Avatar_URL, Field) values (2, 'Barby', 'Workman', 'bworkman1@yahoo.com', 'Operations & Maintenance', 'http://dummyimage.com/250x100.png/5fa2dd/ffffff', 'Admin');
 insert into Employee (eID, fName, lName, email, position, Avatar_URL, Field) values (3, 'Emmet', 'Friman', 'efriman2@usda.gov', 'Manager', 'http://dummyimage.com/152x100.png/dddddd/000000', 'Operations');

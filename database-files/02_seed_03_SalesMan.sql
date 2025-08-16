@@ -1,3 +1,4 @@
+USE `SpotLight`;
 insert into SalesMan (eID) values ('3');
 insert into SalesMan (eID) values ('4');
 insert into SalesMan (eID) values ('6');

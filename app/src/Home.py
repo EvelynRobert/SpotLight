@@ -51,6 +51,20 @@ if st.button('Act as a Customer',
     st.session_state['role'] = 'customer'
     st.switch_page('pages/01_profile.py')
 
+if st.button('Act as a Salesman',
+             type = 'primary',
+             use_container_width=True):
+    st.session_state['authenticated'] = True
+    st.session_state['role'] = 'salesman'
+    st.switch_page('pages/10_workbench.py')
+
+if st.button('Act as an Owner',
+                 type = 'primary',
+                 use_container_width=True):
+    st.session_state['authenticated'] = True
+    st.session_state['role'] = 'owner'
+    st.switch_page('pages/12_API_Test.py')
+
 if st.button('Act as an O&M Admin',
             type = 'primary',
             use_container_width=True):
