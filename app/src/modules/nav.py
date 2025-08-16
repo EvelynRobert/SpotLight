@@ -15,7 +15,6 @@ def CustomerPageNav():
 
 def SalesmanPageNav():
     st.sidebar.page_link("pages/10_workbench.py", label="Workbench", icon="🔧")  
-    st.sidebar.page_link("pages/04_Salesman_Workbench.py",label="Map", icon="🗺️")
     st.sidebar.page_link("pages/40_Sales_Leads.py", label="📇 Leads", icon="📇")
     st.sidebar.page_link("pages/41_Sales_Repeat_Clients.py", label="🔁 Repeat Clients", icon="🔁")
     st.sidebar.page_link("pages/42_Sales_Spots.py", label="📍 Spots", icon="📍")
