@@ -1,18 +1,20 @@
 import streamlit as st
 from modules.nav import SideBarLinks
 import requests
+import json
 
 SideBarLinks()
 
 st.title('O&M Dashboard')
 
-API = "http://web-api:4000/o_and_m"
+API_URL = "http://web-api:4000/o_and_m"
 st.session_state.setdefault("search_results", None)
 st.session_state.setdefault("full_db_search", "")
+st.session_state.setdefault("enter_data_db", "")
 
 def performSearch(query):
     try:
-        response = requests.get(f"{API}/search", params={"query": query})
+        response = requests.get(f"{API_URL}/search", params={"query": query})
         if response.status_code == 200:
             return response.json()
         else:
@@ -94,35 +96,88 @@ with col_right1:
         clear_column, insert_column = st.columns(2)
         with clear_column:
             if st.button("Clear Data", type='secondary', use_container_width=True):
+                st.session_state.enter_data_db = ""
                 st.toast("Data cleared")
 
         with insert_column:
             if st.button("Insert Data", type='primary', use_container_width=True):
                 st.toast("Performing insert...")
+                try:
+                    payload = json.loads(st.session_state.enter_data_db)
+                    r = requests.post(f"{API_URL}/insert", json=payload)
+                    if r.status_code in (200, 201):
+                        st.success("Insert successful")
+                        st.json(r.json())
+                    else:
+                        st.error(f"Error {r.status_code}: {r.text}")
+                except json.JSONDecodeError:
+                    st.error("Invalid JSON")
+                except Exception as e:
+                    st.error(f"Request failed: {e}")
 
         with st.container(border=True):
             st.write("**Preview**")
-            st.write("No data to preview. Please enter data to see a preview here.")
-            # TODO: Preview functionality
+            if st.session_state.enter_data_db.strip():
+                try:
+                    st.json(json.loads(st.session_state.enter_data_db))
+                except:
+                    st.write("Invalid JSON. Cannot preview.")
+            else:
+                st.caption("No data to preview. Please enter data and click **Insert Data** to see a preview here.")
 
 st.divider()
 
 d1, d2, d3 = st.columns(3)
 with d1:
     with st.container():
-        st.text_input("**Delete Spot by ID**", placeholder="Enter ID", key="delete_spot_id")
+        spot_id = st.text_input("**Delete Spot by ID**", placeholder="Enter ID", key="delete_spot_id")
         if st.button("Delete", type='primary', use_container_width=True, key="delete_spot"):
-            st.toast("Deleted")
+            if spot_id.strip():
+                try:
+                    r = requests.delete(f"{API_URL}/spot/{spot_id}")
+                    if r.status_code == 200:
+                        st.success(f"Spot {spot_id} deleted")
+                        st.json(r.json())
+                    else:
+                        st.error(f"Error {r.status_code}: {r.text}")
+                except Exception as e:
+                    st.error(f"Request failed: {e}")
+            else:
+                st.warning("Please enter a Spot ID.")
+
 with d2:
     with st.container():
-        st.text_input("**Delete Customer by ID**", placeholder="Enter ID", key="delete_customer_id")
+        customer_id = st.text_input("**Delete Customer by ID**", placeholder="Enter ID", key="delete_customer_id")
         if st.button("Delete", type='primary', use_container_width=True, key="delete_customer"):
-            st.toast("Deleted")
+            if customer_id.strip():
+                try:
+                    r = requests.delete(f"{API_URL}/customer/{customer_id}")
+                    if r.status_code == 200:
+                        st.success(f"Customer {customer_id} deleted")
+                        st.json(r.json())
+                    else:
+                        st.error(f"Error {r.status_code}: {r.text}")
+                except Exception as e:
+                    st.error(f"Request failed: {e}")
+            else:
+                st.warning("Please enter a Customer ID.")
+
 with d3:
     with st.container():
-        st.text_input("**Delete Order by ID**", placeholder="Enter ID", key="delete_order_id")
+        order_id = st.text_input("**Delete Order by ID**", placeholder="Enter ID", key="delete_order_id")
         if st.button("Delete", type='primary', use_container_width=True, key="delete_order"):
-            st.toast("Deleted")
+            if order_id.strip():
+                try:
+                    r = requests.delete(f"{API_URL}/order/{order_id}")
+                    if r.status_code == 200:
+                        st.success(f"Order {order_id} deleted")
+                        st.json(r.json())
+                    else:
+                        st.error(f"Error {r.status_code}: {r.text}")
+                except Exception as e:
+                    st.error(f"Request failed: {e}")
+            else:
+                st.warning("Please enter an Order ID.")
 
 st.divider()
 
@@ -171,29 +226,77 @@ with col_left2:
 with col_right2:
     with st.container(border=True):
         st.write("**Spots Info:**")
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Total", 1055)
-        m2.metric("In-use", 840)
-        m3.metric("Free", 133)
-        m4.metric("W.Issue", 82)
-        if st.button("Print details on Result Area", use_container_width=True, key="print_spots"):
-            st.toast("Printing details on Result Area...")
+        try:
+            r = requests.get(f"{API_URL}/spots/metrics")
+            if r.status_code == 200:
+                data = r.json()
+                m1, m2, m3, m4 = st.columns(4)
+                m1.metric("Total", data["total"])
+                m2.metric("In-use", data["in_use"])
+                m3.metric("Free", data["free"])
+                m4.metric("W.Issue", data["with_issue"])
+            else:
+                st.error(f"Error {r.status_code}: {r.text}")
+        except Exception as e:
+            st.error(f"Failed to fetch spots metrics: {e}")
+
+        if st.button("Print details", use_container_width=True, key="print_spots"):
+            try:
+                r = requests.get(f"{API_URL}/spots/summary?limit=10")
+                if r.status_code == 200:
+                    st.json(r.json())
+                else:
+                    st.error(f"Error {r.status_code}: {r.text}")
+            except Exception as e:
+                st.error(f"Failed to fetch spot details: {e}")
 
     with st.container(border=True):
         st.write("**Customers Account Info:**")
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Total", 483)
-        c2.metric("VIP", 21)
-        c3.metric("Never Ordered", 139)
-        c4.metric("Avg Order Time", "3")
-        if st.button("Print details on Result Area", use_container_width=True, key="print_customers"):
-            st.toast("Printing details on Result Area...")
+        try:
+            r = requests.get(f"{API_URL}/customers/metrics")
+            if r.status_code == 200:
+                data = r.json()
+                c1, c2, c3, c4 = st.columns(4)
+                c1.metric("Total", data["total"])
+                c2.metric("VIP", data["vip"])
+                c3.metric("Never Ordered", data["never_ordered"])
+                c4.metric("Avg Order Time", data["avg_order_time"])
+            else:
+                st.error(f"Error {r.status_code}: {r.text}")
+        except Exception as e:
+            st.error(f"Failed to fetch customers metrics: {e}")
+
+        if st.button("Print details", use_container_width=True, key="print_customers"):
+            try:
+                r = requests.get(f"{API_URL}/customers/summary?limit=10")
+                if r.status_code == 200:
+                    st.json(r.json())
+                else:
+                    st.error(f"Error {r.status_code}: {r.text}")
+            except Exception as e:
+                st.error(f"Failed to fetch customer details: {e}")
 
     with st.container(border=True):
         st.write("**Order Info:**")
-        o1, o2, o3 = st.columns(3)
-        o1.metric("Total", 4855)
-        o2.metric("Avg price", "$230")
-        o3.metric("Last 90 days", 842)
-        if st.button("Print details on Result Area", use_container_width=True, key="print_orders"):
-            st.toast("Printing details on Result Area...")
+        try:
+            r = requests.get(f"{API_URL}/orders/metrics", params={"period": "90d"})
+            if r.status_code == 200:
+                data = r.json()
+                o1, o2, o3 = st.columns(3)
+                o1.metric("Total", data["total"])
+                o2.metric("Avg price", f"${data['avg_price']}")
+                o3.metric("Last 90 days", data["last_period"])
+            else:
+                st.error(f"Error {r.status_code}: {r.text}")
+        except Exception as e:
+            st.error(f"Failed to fetch orders metrics: {e}")
+
+        if st.button("Print details", use_container_width=True, key="print_orders"):
+            try:
+                r = requests.get(f"{API_URL}/orders/summary?period=90d&limit=10")
+                if r.status_code == 200:
+                    st.json(r.json())
+                else:
+                    st.error(f"Error {r.status_code}: {r.text}")
+            except Exception as e:
+                st.error(f"Failed to fetch order details: {e}")
