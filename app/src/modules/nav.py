@@ -9,14 +9,15 @@ def HomeNav():
     st.sidebar.page_link("Home.py", label="Home", icon="🏠")
 
 def CustomerPageNav():
-    st.sidebar.page_link("pages/00_profile.py", label="Profile", icon="👤")
-    st.sidebar.page_link("pages/01_customer_map.py", label="Customer Map", icon="🗺️")
-    st.sidebar.page_link("pages/02_search.py", label="Search", icon="🔍")
+    st.sidebar.page_link("pages/01_Customer_Profile.py", label="Profile", icon="👤")
+    st.sidebar.page_link("pages/03_Customer_Map.py",                 label="🗺️ Map")
+    st.sidebar.page_link("pages/10_Customer_Browse_and_Cart.py",     label="🛒 Browse & Cart")
+    st.sidebar.page_link("pages/11_Customer_Orders_and_Cancel.py",   label="🧾 Orders & Cancel")
 
 def SalesmanPageNav():
-    st.sidebar.page_link("pages/40_Sales_Leads.py", label="📇 Leads", icon="📇")
-    st.sidebar.page_link("pages/41_Sales_Repeat_Clients.py", label="🔁 Repeat Clients", icon="🔁")
-    st.sidebar.page_link("pages/42_Sales_Spots.py", label="📍 Spots", icon="📍")
+    st.sidebar.page_link("pages/40_Sales_Leads.py", label="Leads", icon="📇")
+    st.sidebar.page_link("pages/41_Sales_Repeat_Clients.py", label="Repeat Clients", icon="🔁")
+    st.sidebar.page_link("pages/42_Sales_Spots.py", label="Spots", icon="📍")
 
 def AdminPageNav():
     st.sidebar.page_link("pages/20_dashboard.py", label="O&M Dashboard", icon="🖥️")

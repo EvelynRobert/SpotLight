@@ -18,21 +18,8 @@ st.set_page_config(page_title="Customer Profile", page_icon="👤", layout="wide
 st.title("👤 Customer Profile")
 
 # ---- Quick nav to other Customer pages ----
-with st.sidebar:
-    st.subheader("Customer pages")
-    try:
-        # Streamlit ≥ 1.29
-        st.page_link("pages/03_Customer_Map.py",                 label="🗺️ Map")
-        st.page_link("pages/10_Customer_Browse_and_Cart.py",     label="🛒 Browse & Cart")
-        st.page_link("pages/11_Customer_Orders_and_Cancel.py",   label="🧾 Orders & Cancel")
-    except Exception:
-        # Fallback for older Streamlit
-        if st.button("🗺️ Map"):
-            st.switch_page("pages/03_Customer_Map.py")
-        if st.button("🛒 Browse & Cart"):
-            st.switch_page("pages/10_Customer_Browse_and_Cart.py")
-        if st.button("🧾 Orders & Cancel"):
-            st.switch_page("pages/11_Customer_Orders_and_Cancel.py")
+from modules.nav import SideBarLinks
+SideBarLinks()
             
 # --- list / search ---
 col_a, col_b = st.columns([2,1])

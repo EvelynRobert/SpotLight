@@ -25,18 +25,8 @@ st.set_page_config(page_title="Customer – Browse & Cart", page_icon="🛒", la
 st.title("🛒 Browse Spots & Build Your Order")
 
 # ---- Customer sidebar (shared) ----
-with st.sidebar:
-    st.subheader("Customer pages")
-    try:
-        st.page_link("pages/01_Customer_Profile.py",           label="👤 Profile")
-        st.page_link("pages/03_Customer_Map.py",               label="🗺️ Map")
-        st.page_link("pages/10_Customer_Browse_and_Cart.py",   label="🛒 Browse & Cart")
-        st.page_link("pages/11_Customer_Orders_and_Cancel.py", label="🧾 Orders & Cancel")
-    except Exception:
-        if st.button("👤 Profile"):            st.switch_page("pages/01_Customer_Profile.py")
-        if st.button("🗺️ Map"):               st.switch_page("pages/03_Customer_Map.py")
-        if st.button("🛒 Browse & Cart"):      st.switch_page("pages/10_Customer_Browse_and_Cart.py")
-        if st.button("🧾 Orders & Cancel"):    st.switch_page("pages/11_Customer_Orders_and_Cancel.py")
+from modules.nav import SideBarLinks
+SideBarLinks()
 
 # --- session cart ---
 if "cart" not in st.session_state:
