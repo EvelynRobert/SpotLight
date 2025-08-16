@@ -59,11 +59,12 @@ if st.button('Act as a Salesman',
     st.switch_page('pages/10_workbench.py')
 
 if st.button('Act as an Owner',
-                 type = 'primary',
-                 use_container_width=True):
+             type='primary',
+             use_container_width=True):
     st.session_state['authenticated'] = True
     st.session_state['role'] = 'owner'
-    st.switch_page('pages/12_API_Test.py')
+    st.switch_page('pages/30_Owner_Home.py')  
+
 
 if st.button('Act as an O&M Admin',
             type = 'primary',
