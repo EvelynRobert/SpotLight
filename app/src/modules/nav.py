@@ -23,7 +23,7 @@ def AdminPageNav():
     st.sidebar.page_link("pages/20_dashboard.py", label="O&M Dashboard", icon="🖥️")
     st.sidebar.page_link("pages/21_statistics.py", label="Statistics", icon="📊")
     st.sidebar.page_link("pages/22_management_map.py", label="Management Map", icon="🗺️")
-    st.sidebar.page_link("pages/23_O&M_Admin_and_Imports.py", label="Admin & Imports", icon="🛠️")  
+    st.sidebar.page_link("pages/23_OM_Admin_and_Imports.py", label="Admin & Imports", icon="🛠️")  
 
 
 

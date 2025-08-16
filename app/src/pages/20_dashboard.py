@@ -1,70 +1,34 @@
-import streamlit as st
-import pandas as pd
-import requests
+import os, requests, pandas as pd, streamlit as st
 from datetime import date
-
-# --- import sidebar helper no matter where nav.py lives ---
-try:
-    from modules.nav import SideBarLinks  # your repo variant
-except ModuleNotFoundError:
-    try:
-        from nav import SideBarLinks  # alt location
-    except ModuleNotFoundError:
-        # tiny fallback so page still works
-        def SideBarLinks():
-            with st.sidebar:
-                st.page_link("Home.py", label="🏠 Home")
-                st.subheader("O&M")
-                st.page_link("pages/20_dashboard.py", label="O&M Dashboard")
-                st.page_link("pages/21_statistics.py", label="Statistics")
-                st.page_link("pages/22_management_map.py", label="Management Map")
-                st.page_link("pages/23_O&M_Admin_and_Imports.py", label="Admin & Imports")
-                st.divider()
-                if st.button("🚪 Log out", use_container_width=True):
-                    for k in ("persona","cID","active_order_id","map_lat","map_lng","role","authenticated"):
-                        st.session_state.pop(k, None)
-                    st.switch_page("Home.py")
-
-
-# --- API bases pulled from env so this works inside/outside Docker ---
-import os
-BASE = os.getenv("API_BASE_URL", "http://127.0.0.1:4000")     # <— set this in your terminal or .env
-API_OAM = f"{BASE.rstrip('/')}/o_and_m"
-API_SALESMAN = f"{BASE.rstrip('/')}/salesman"
-API_OWNER = f"{BASE.rstrip('/')}/owner"
-
+from modules.nav import SideBarLinks
 
 st.set_page_config(page_title="O&M Dashboard", layout="wide")
+SideBarLinks()
 st.title("O&M Dashboard")
 
-API_OAM = "http://web-api:4000/o_and_m"
-API_SALESMAN = "http://web-api:4000/salesman"
+API = os.getenv("API_BASE_URL", "http://127.0.0.1:4000").rstrip("/")
 
-# -------- helpers --------
-def get_json(url):
+def api(method: str, path: str, **kw):
+    url = f"{API}/{path.lstrip('/')}"
     try:
-        r = requests.get(url, timeout=20)
-        if r.headers.get("content-type","").startswith("application/json"):
-            return r.status_code, r.json()
-        return r.status_code, r.text
+        r = requests.request(method, url, timeout=20, **kw)
+        data = r.json() if "application/json" in r.headers.get("content-type","") else r.text
+        return r.status_code, data
     except Exception as e:
         return 0, {"error": str(e)}
 
-def post_json(url, payload):
-    try:
-        r = requests.post(url, json=payload, timeout=20)
-        if r.headers.get("content-type","").startswith("application/json"):
-            return r.status_code, r.json()
-        return r.status_code, r.text
-    except Exception as e:
-        return 0, {"error": str(e)}
+# ---- quick connectivity check ----
+code, ping = api("GET", "/o_and_m/spots/metrics")
+if code != 200:
+    st.error(f"O&M API not reachable at {API} (got {code}). Set API_BASE_URL if needed. Details: {ping}")
+    st.stop()
 
 # -------- top metrics --------
 m1, m2, m3 = st.columns(3)
 
 with m1:
     st.subheader("Spots")
-    code, data = get_json(f"{API_OAM}/spots/metrics")
+    code, data = api("GET", "/o_and_m/spots/metrics")
     if code == 200 and isinstance(data, dict):
         a,b,c = st.columns(3)
         a.metric("Total", data.get("total",0))
@@ -75,7 +39,7 @@ with m1:
 
 with m2:
     st.subheader("Customers")
-    code, data = get_json(f"{API_OAM}/customers/metrics")
+    code, data = api("GET", "/o_and_m/customers/metrics")
     if code == 200 and isinstance(data, dict):
         a,b,c = st.columns(3)
         a.metric("Total", data.get("total",0))
@@ -87,7 +51,7 @@ with m2:
 
 with m3:
     st.subheader("Orders (90d)")
-    code, data = get_json(f"{API_OAM}/orders/metrics?period=90d")
+    code, data = api("GET", "/o_and_m/orders/metrics?period=90d")
     if code == 200 and isinstance(data, dict):
         a,b = st.columns(2)
         a.metric("All time total", data.get("total",0))
@@ -104,7 +68,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["Spots info", "Customer accounts info", "Order
 with tab1:
     st.subheader("Spots info (latest)")
     limit = st.slider("Limit", 10, 200, 50, 10, key="spots_limit")
-    code, data = get_json(f"{API_OAM}/spots/summary?limit={limit}")
+    code, data = api("GET", f"/o_and_m/spots/summary?limit={limit}")
     if code == 200 and isinstance(data, list) and data:
         df = pd.DataFrame(data)
         show = [c for c in ["spotID","address","status","price","estViewPerMonth","monthlyRentCost"] if c in df.columns]
@@ -115,7 +79,7 @@ with tab1:
 with tab2:
     st.subheader("Customer accounts info")
     limit = st.slider("Limit", 10, 200, 50, 10, key="cust_limit")
-    code, data = get_json(f"{API_OAM}/customers/summary?limit={limit}")
+    code, data = api("GET", f"/o_and_m/customers/summary?limit={limit}")
     if code == 200 and isinstance(data, list) and data:
         df = pd.DataFrame(data)
         show = [c for c in ["cID","fName","lName","email","companyName","VIP","last_order_date","days_since_last_order"] if c in df.columns]
@@ -126,7 +90,7 @@ with tab2:
 with tab3:
     st.subheader("Order info (recent 90d)")
     limit = st.slider("Limit", 10, 200, 50, 10, key="orders_limit")
-    code, data = get_json(f"{API_OAM}/orders/summary?period=90d&limit={limit}")
+    code, data = api("GET", f"/o_and_m/orders/summary?period=90d&limit={limit}")
     if code == 200 and isinstance(data, list) and data:
         df = pd.DataFrame(data)
         show = [c for c in ["orderID","date","total","cID"] if c in df.columns]
@@ -154,12 +118,12 @@ with tab4:
             longitude = st.number_input("longitude", value=-82.3248, format="%.6f")
         if st.button("Create spot", type="primary"):
             payload = {
-                "entity":"spot","price":price,"contactTel":contactTel,"address":address,
-                "status":status,"imageURL":imageURL or None,"estViewPerMonth":estViewPerMonth,
-                "monthlyRentCost":monthlyRentCost,"endTimeOfCurrentOrder":endTimeOfCurrentOrder or None,
-                "latitude":latitude,"longitude":longitude
+                "entity":"spot","price":int(price),"contactTel":contactTel,"address":address,
+                "status":status,"imageURL":imageURL or None,"estViewPerMonth":int(estViewPerMonth),
+                "monthlyRentCost":int(monthlyRentCost),"endTimeOfCurrentOrder":endTimeOfCurrentOrder or None,
+                "latitude":float(latitude),"longitude":float(longitude)
             }
-            code, data = post_json(f"{API_OAM}/insert", payload)
+            code, data = api("POST", "/o_and_m/insert", json=payload)
             st.success(data) if code in (200,201) else st.error(f"{code} {data}")
 
     if sub == "Customer":
@@ -179,10 +143,10 @@ with tab4:
         if st.button("Create customer", type="primary"):
             payload = {
                 "entity":"customer","fName":fName,"lName":lName,"email":email,
-                "position":position,"companyName":companyName,"totalOrderTimes":int(totalOrderTimes),
+                "position":position or None,"companyName":companyName or None,"totalOrderTimes":int(totalOrderTimes),
                 "VIP":bool(VIP),"avatarURL":avatarURL or None,"balance":int(balance),"TEL":TEL or None
             }
-            code, data = post_json(f"{API_OAM}/insert", payload)
+            code, data = api("POST", "/o_and_m/insert", json=payload)
             st.success(data) if code in (200,201) else st.error(f"{code} {data}")
 
     if sub == "Order":
@@ -192,5 +156,5 @@ with tab4:
         cID = col[2].number_input("cID (customer id)", 1, 999999, 1)
         if st.button("Create order", type="primary"):
             payload = {"entity":"order","date":date_str,"total":int(total_amt),"cID":int(cID)}
-            code, data = post_json(f"{API_OAM}/insert", payload)
+            code, data = api("POST", "/o_and_m/insert", json=payload)
             st.success(data) if code in (200,201) else st.error(f"{code} {data}")
