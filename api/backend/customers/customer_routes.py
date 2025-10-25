@@ -4,7 +4,7 @@ from mysql.connector import Error
 from datetime import datetime
 
 # Blueprint setup
-customer = Blueprint("customer", __name__, url_prefix="/customer")
+customer = Blueprint("customer", __name__)
 customer.strict_slashes = False
 
 
