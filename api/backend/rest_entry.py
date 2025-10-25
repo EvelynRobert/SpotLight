@@ -1,5 +1,5 @@
 from flask import Flask
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 import os
 import logging
 from logging.handlers import RotatingFileHandler
@@ -12,42 +12,72 @@ from backend.orders.orders_routes import orders
 from backend.salesman.salesman_route import salesman_bp
 from backend.owner.owner_route import owner_bp
 
+
+def get_env(*keys, default=None, cast=None):
+    """
+    Return the first non-empty env var among `keys`, else `default`.
+    Optionally cast the value (e.g., cast=int). Strips whitespace.
+    """
+    for k in keys:
+        v = os.getenv(k)
+        if v is not None and str(v).strip() != "":
+            v = str(v).strip()
+            return cast(v) if cast else v
+    return default if (cast is None or default is None) else cast(default)
+
+
 def create_app():
     app = Flask(__name__)
 
-    # Configure logging
-    # Create logs directory if it doesn't exist
+    # 1) Logging first (so we see startup/debug info)
     setup_logging(app)
 
-    # Load environment variables
-    # This function reads all the values from inside
-    # the .env file (in the parent folder) so they
-    # are available in this file.  See the MySQL setup
-    # commands below to see how they're being used.
-    load_dotenv()
+    # 2) Load .env if present (no error if it's missing)
+    #    find_dotenv() will locate ./api/.env or any ancestor; override=False preserves OS/Docker vars.
+    load_dotenv(find_dotenv(), override=False)
 
-    # secret key that will be used for securely signing the session
-    # cookie and can be used for any other security related needs by
-    # extensions or your application
-    # app.config['SECRET_KEY'] = 'someCrazyS3cR3T!Key.!'
-    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+    # 3) App / DB config with sensible defaults and backward-compatible keys
+    # SECRET / Flask env
+    app.config["SECRET_KEY"] = get_env(
+        "SECRET_KEY", "FLASK_SECRET_KEY", "SECRET", default="dev"
+    )
+    # You can still use FLASK_ENV externally; we don't need to store it in config.
 
-    # # these are for the DB object to be able to connect to MySQL.
-    # app.config['MYSQL_DATABASE_USER'] = 'root'
-    app.config["MYSQL_DATABASE_USER"] = os.getenv("DB_USER").strip()
-    app.config["MYSQL_DATABASE_PASSWORD"] = os.getenv("MYSQL_ROOT_PASSWORD").strip()
-    app.config["MYSQL_DATABASE_HOST"] = os.getenv("DB_HOST").strip()
-    app.config["MYSQL_DATABASE_PORT"] = int(os.getenv("DB_PORT").strip())
-    app.config["MYSQL_DATABASE_DB"] = os.getenv(
-        "DB_NAME"
-    ).strip()  # Change this to your DB name
+    # Database settings — supports both DB_* and older MYSQL_* names
+    app.config["MYSQL_DATABASE_USER"] = get_env(
+        "DB_USER", "MYSQL_DATABASE_USER", "MYSQL_USER", default="root"
+    )
+    app.config["MYSQL_DATABASE_PASSWORD"] = get_env(
+        "DB_PASSWORD", "MYSQL_ROOT_PASSWORD", "MYSQL_DATABASE_PASSWORD", "MYSQL_PASSWORD",
+        default="changeme"
+    )
+    app.config["MYSQL_DATABASE_HOST"] = get_env(
+        "DB_HOST", "MYSQL_DATABASE_HOST", "MYSQL_HOST",
+        # Default to localhost; if you're using docker-compose with a DB service named "db",
+        # set DB_HOST=db in your env/compose.
+        default="127.0.0.1"
+    )
+    app.config["MYSQL_DATABASE_PORT"] = get_env(
+        "DB_PORT", "MYSQL_DATABASE_PORT", "MYSQL_PORT", default=3306, cast=int
+    )
+    app.config["MYSQL_DATABASE_DB"] = get_env(
+        "DB_NAME", "MYSQL_DATABASE_DB", "MYSQL_DATABASE", "MYSQL_DB",
+        default="SpotLight"
+    )
 
-    # Initialize the database object with the settings above.
+    # Log the resolved (non-sensitive) connection info for debugging
+    app.logger.info(
+        "DB config -> host=%s port=%s user=%s db=%s",
+        app.config['MYSQL_DATABASE_HOST'],
+        app.config['MYSQL_DATABASE_PORT'],
+        app.config['MYSQL_DATABASE_USER'],
+        app.config['MYSQL_DATABASE_DB'],
+    )
+
+    # 4) Initialize DB and register blueprints
     app.logger.info("current_app(): starting the database connection")
     db.init_app(app)
 
-    # Register the routes from each Blueprint with the app object
-    # and give a url prefix to each
     app.logger.info("create_app(): registering blueprints with Flask app object.")
     app.register_blueprint(o_and_m, url_prefix="/o_and_m")
     app.register_blueprint(customer, url_prefix="/customer")
@@ -56,20 +86,17 @@ def create_app():
     app.register_blueprint(salesman_bp)
     app.register_blueprint(owner_bp)
 
-    # Don't forget to return the app object
     return app
+
 
 def setup_logging(app):
     """
-    Configure logging for the Flask application in both files and console (Docker Desktop for this project)
-    
-    Args:
-        app: Flask application instance to configure logging for
+    Configure logging for the Flask application in both files and console.
+    Creates ./logs if needed and writes rotating logs to logs/api.log
     """
     if not os.path.exists('logs'):
         os.mkdir('logs')
 
-    ## Set up FILE HANDLER for all levels
     file_handler = RotatingFileHandler(
         'logs/api.log',
         maxBytes=10240,
@@ -78,20 +105,15 @@ def setup_logging(app):
     file_handler.setFormatter(logging.Formatter(
         '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
     ))
-    
-    # Make sure we are capturing all levels of logging into the log files. 
-    file_handler.setLevel(logging.DEBUG)  # Capture all levels in file
+    file_handler.setLevel(logging.DEBUG)
     app.logger.addHandler(file_handler)
 
-    ## Set up CONSOLE HANDLER for all levels
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(logging.Formatter(
         '%(asctime)s %(levelname)s: %(message)s'
     ))
-    # Debug level capture makes sure that all log levels are captured
     console_handler.setLevel(logging.DEBUG)
     app.logger.addHandler(console_handler)
 
-    # Set the base logging level to DEBUG to capture everything
     app.logger.setLevel(logging.DEBUG)
     app.logger.info('API startup')
