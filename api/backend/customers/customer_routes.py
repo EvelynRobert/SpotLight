@@ -4,7 +4,7 @@ from mysql.connector import Error
 from datetime import datetime
 
 # Blueprint setup
-customer = Blueprint("customer", __name__)
+customer = Blueprint("customer", __name__, url_prefix="/customer")
 customer.strict_slashes = False
 
 
@@ -186,3 +186,34 @@ def list_customer_orders(c_id: int):
     return jsonify(result), 200
 
     
+@customer.route("/<int:c_id>/funds", methods=["POST"])
+def add_funds(c_id: int):
+    """
+    Atomically increment a customer's balance on the server side.
+    Request JSON: { "amount": number > 0 }
+    Returns: { cID, balance }
+    """
+    try:
+        payload = request.get_json(silent=True) or {}
+        amount = payload.get("amount", None)
+        amount = float(amount)
+        if amount <= 0:
+            return jsonify({"error": "Amount must be positive"}), 400
+    except Exception:
+        return jsonify({"error": "Invalid amount"}), 400
+
+    # Increment balance in a single atomic statement
+    upd_sql = "UPDATE Customers SET balance = COALESCE(balance, 0) + %s WHERE cID = %s"
+    updated_rows, err = _execute_query(upd_sql, (amount, c_id))
+    if err:
+        return jsonify({"error": err}), 500
+    if not updated_rows:
+        return jsonify({"error": "Customer not found"}), 404
+
+    # Return the new balance
+    sel_sql = "SELECT cID, balance FROM Customers WHERE cID = %s"
+    row, err = _execute_query(sel_sql, (c_id,), fetch_one=True, dictionary=True)
+    if err:
+        return jsonify({"error": err}), 500
+
+    return jsonify({"cID": row["cID"], "balance": row.get("balance", 0)}), 200
