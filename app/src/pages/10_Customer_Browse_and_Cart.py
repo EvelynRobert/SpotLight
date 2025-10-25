@@ -129,18 +129,33 @@ with colL:
 
 with colR:
     st.write("Cart summary")
+
     cart_rows = list(st.session_state.cart.values())
     n = len(cart_rows)
-    total_price = sum([r.get("price", 0) or 0 for r in cart_rows])
-    total_views = sum([r.get("estViewPerMonth", 0) or 0 for r in cart_rows])
+
+    total_price = sum((r.get("price") or 0) for r in cart_rows)
+    total_views = sum((r.get("estViewPerMonth") or 0) for r in cart_rows)
+
+    # Always show metrics (they’ll be 0 when empty)
     st.metric("Spots selected", n)
     st.metric("Estimated price (sum)", f"${total_price:,.2f}")
     st.metric("Est. monthly views (sum)", f"{total_views:,}")
 
+    # Only render the per-item table when cart has items
+    if cart_rows:
+        all_keys = set().union(*(row.keys() for row in cart_rows))
+        show_cols = [c for c in ["spotID", "address", "price", "estViewPerMonth"] if c in all_keys]
+        st.dataframe(
+            pd.DataFrame.from_records(cart_rows)[show_cols],
+            hide_index=True,
+            use_container_width=True,
+        )
+
+
 # --- place order ---
 st.subheader("4) Place order")
 with st.form("place_order"):
-    order_date = st.date_input("Order date", value=date.today())
+    order_date = st.date_input("End date (order expiry)", value=date.today())
     submitted = st.form_submit_button("🧾 Place Order", disabled=(len(st.session_state.cart)==0))
 
 if submitted:
@@ -184,4 +199,4 @@ if submitted:
         # clear cart after success
         st.session_state.cart = {}
         time.sleep(0.5)
-        st.experimental_rerun()
+        st.rerun()
