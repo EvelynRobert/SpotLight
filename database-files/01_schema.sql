@@ -67,8 +67,7 @@ CREATE TABLE IF NOT EXISTS OandM (
 
 CREATE TABLE IF NOT EXISTS Orders (
   orderID INT AUTO_INCREMENT PRIMARY KEY,
-  startdate DATE,
-  enddate DATE,
+  date DATE,
   total INT,
   cID INT,
   CONSTRAINT chk_totalnotnegative CHECK (total >= 0),
